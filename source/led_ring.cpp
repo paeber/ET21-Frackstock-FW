@@ -44,8 +44,10 @@
 #define PCA_OUT_PWM0    0b10
 #define PCA_OUT_PWM1    0b11
 
-const uint8_t seg_order_digit_r[8] = {1, 0, 6, 5, 4, 2, 3, 7};
-const uint8_t seg_order_digit_l[8] = {13, 12, 10, 9, 8, 14, 15, 11};
+const uint8_t seg_order_digit[2][8] = {
+    {1, 0, 6, 5, 4, 2, 3, 7},
+    {13, 12, 10, 9, 8, 14, 15, 11}
+    };
 
 const uint8_t segment_digit_8[17] = {
     0b00111111, // 0
@@ -68,6 +70,14 @@ const uint8_t segment_digit_8[17] = {
 };
 
 
+/**
+ * Writes a number to the LED segment display.
+ *
+ * This function takes a single parameter `number` of type `uint8_t` and writes it to the LED segment display.
+ * The number is displayed as a two-digit decimal number on the display.
+ *
+ * @param number The number to be displayed on the LED segment display.
+ */
 void SEG_write_number(uint8_t number){
     uint8_t data[5];
     int ret;
@@ -84,13 +94,13 @@ void SEG_write_number(uint8_t number){
         if(segment_digit_8[tens] & (1 << i) ){
             //digit_1_out &= ~(1 << (seg_order_digit_l[i] % 8));
         } else {
-            digit_1_out |= (1 << (seg_order_digit_l[i] % 8) * 2);
+            digit_1_out |= (1 << (seg_order_digit[LEFT_DIGIT][i] % 8) * 2);
         }
 
         if(segment_digit_8[ones] & (1 << i) ){
             //digit_2_out &= ~(1 << (seg_order_digit_r[i] % 8));
         } else {
-            digit_2_out |= (1 << (seg_order_digit_r[i] % 8) * 2);
+            digit_2_out |= (1 << (seg_order_digit[RIGHT_DIGIT][i] % 8) * 2);
         }
     }
 
@@ -103,6 +113,14 @@ void SEG_write_number(uint8_t number){
 }
 
 
+/**
+ * Writes a hexadecimal number to the LED ring display.
+ *
+ * This function takes a decimal number and converts it to its hexadecimal representation.
+ * The converted number is then displayed on the LED ring display using two digits.
+ *
+ * @param number The decimal number to be converted and displayed.
+ */
 void SEG_write_number_hex(uint8_t number){
     uint8_t data[5];
     int ret;
@@ -119,13 +137,13 @@ void SEG_write_number_hex(uint8_t number){
         if(segment_digit_8[tens] & (1 << i) ){
             //digit_1_out &= ~(1 << (seg_order_digit_l[i] % 8));
         } else {
-            digit_1_out |= (1 << (seg_order_digit_l[i] % 8) * 2);
+            digit_1_out |= (1 << (seg_order_digit[LEFT_DIGIT][i] % 8) * 2);
         }
 
         if(segment_digit_8[ones] & (1 << i) ){
             //digit_2_out &= ~(1 << (seg_order_digit_r[i] % 8));
         } else {
-            digit_2_out |= (1 << (seg_order_digit_r[i] % 8) * 2);
+            digit_2_out |= (1 << (seg_order_digit[RIGHT_DIGIT][i] % 8) * 2);
         }
     }
 
@@ -138,6 +156,11 @@ void SEG_write_number_hex(uint8_t number){
 }
 
 
+/**
+ * Adds a dot to the specified digit on the LED ring.
+ *
+ * @param digit The digit to add the dot to. Should be either LEFT_DIGIT or RIGHT_DIGIT.
+ */
 void SEG_add_dot(uint8_t digit){
     uint8_t data[5];
     int ret;
@@ -148,16 +171,51 @@ void SEG_add_dot(uint8_t digit){
     data[3] = PCA9552_read_reg(PCA_REG_LS2);
     data[4] = PCA9552_read_reg(PCA_REG_LS3);
 
-    if(digit == 2){
-        data[2] &= ~(0x3 << 6);
-    } else if(digit == 1){
+    if(digit == LEFT_DIGIT){
         data[3] &= ~(0x3 << 6);
+    } else if(digit == RIGHT_DIGIT){
+        data[2] &= ~(0x3 << 6);
     }
 
     ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, data, 5, false);
 }
 
 
+/**
+ * Sets the segments of a specific digit on the LED ring.
+ *
+ * @param digit The digit to set the segments for (RIGHT_DIGIT or LEFT_DIGIT).
+ * @param segments The segments to be displayed on the digit.
+ */
+void SEG_set_segments(uint8_t digit, uint8_t segments){
+    uint8_t data[3];
+    int ret;
+    uint16_t digit_out = 0x00;
+
+    if(digit == RIGHT_DIGIT){
+        data[0] = PCA_REG_LS0 | PCA_AI_FLAG;
+    } else if(digit == LEFT_DIGIT){
+        data[0] = PCA_REG_LS2 | PCA_AI_FLAG;
+    }
+
+    for (int i = 0; i < 8; i++) {
+        if(segments & (1 << i) ){
+            //digit_out &= ~(1 << (seg_order_digit_l[i] % 8));
+        } else {
+            digit_out |= (1 << (seg_order_digit[digit][i] % 8) * 2);
+        }
+    }
+
+    data[1] = digit_out & 0xFF;
+    data[2] = digit_out >> 8;
+
+    ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, data, 3, false);
+}
+
+
+/**
+ * Clears the Segments by sending a command to the PCA9685 LED driver.
+ */
 void SEG_clear(){
     uint8_t data[5];
     int ret;
@@ -172,6 +230,14 @@ void SEG_clear(){
 }
 
 
+/**
+ * @brief Reads a register from PCA9552.
+ * 
+ * This function reads a register from PCA9552 using I2C communication.
+ * 
+ * @param reg The register address to read.
+ * @return The value read from the register. If an error occurs during the I2C communication, 0xfe is returned.
+ */
 uint8_t PCA9552_read_reg(uint8_t reg){
     int ret;
     uint8_t buf[1];
@@ -188,25 +254,48 @@ uint8_t PCA9552_read_reg(uint8_t reg){
     return buf[0];
 }
 
+
+/**
+ * @brief Initializes the PCA9552.
+ * 
+ * This function initializes the PCA9552 by clearing the segments on the LED ring, 
+ * displaying a sequence of segments on the left and right digits, writing the 
+ * version number in hexadecimal format, and adding a dot to the left digit. 
+ * 
+ * @return 0 on success.
+ */
 int PCA9552_init(){
     uint8_t data[5];
     int ret;
 
-    data[0] = PCA_REG_LS0 | PCA_AI_FLAG;
-    data[1] = 0x00;
-    data[2] = 0x55;
-    data[3] = 0x00;
-    data[4] = 0x55;
+    SEG_clear();
 
+    for(int i=0; i<8; i++){
+        SEG_set_segments(LEFT_DIGIT, SEG_A << i);
+        sleep_ms(100);
+    }
+    for(int i=0; i<8; i++){
+        SEG_set_segments(RIGHT_DIGIT, SEG_A << i);
+        sleep_ms(100);
+    }
+
+    SEG_clear();
     SEG_write_number_hex((uint8_t)(VERSION_MAJOR << 4 | VERSION_MINOR));
-    SEG_add_dot(1);
+    SEG_add_dot(LEFT_DIGIT);
     
-    //ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, data, 5, false);
     printf("PCA9552 init: %d\n", ret);
 
     return 0;
 }
 
+
+/**
+ * @brief Initializes the LED ring.
+ * 
+ * This function initializes the I2C bus and the PCA9552 chip used for controlling the LED ring.
+ * 
+ * @return 0 if initialization is successful, otherwise an error code.
+ */
 int LED_Ring_init(){
     // Initialize the I2C bus
     i2c_init(SEG_I2C_PORT, 100 * 1000);
@@ -217,4 +306,8 @@ int LED_Ring_init(){
     PCA9552_init();
 
     return 0;
+}
+
+void LED_Ring_Tick(){
+
 }
