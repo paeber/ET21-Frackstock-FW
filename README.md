@@ -15,6 +15,28 @@ Follow the guide and installer
  - Guide: [Raspberry Pi Pico Windows Installer](https://www.raspberrypi.com/news/raspberry-pi-pico-windows-installer/)
  - Use the VS Code version tagged with "Pico"
 
+### Mac OS [Guide](https://blog.smittytone.net/2021/02/02/program-raspberry-pi-pico-c-mac/) (not complete)
+
+ - Install the SDK:
+
+   1. In Terminal, go to your projects directory, eg. `~/Developer/pico`
+   2. Run `git clone -b master --recurse-submodules``https://github.com/raspberrypi/pico-sdk.git`
+   3. Edit your `.zsh_profile` or `.zshrc` and add: 
+      `export PICO_SDK_PATH="$HOME/Developer/pico/pico-sdk"`
+
+- Install the toolchain:
+
+  1. `brew install cmake`
+  2. `brew tap ArmMbed/homebrew-formulae`
+  3. `brew install arm-none-eabi-gcc`
+
+- Configure the IDE:
+
+  1. Run — or [install and then run](https://code.visualstudio.com/download) — Microsoft Visual Studio Code.
+  2. Click on the Extensions icon.
+  3. Enter `CMake Tools` in the search field.
+  4. Locate CMake Tools by Microsoft and click **Install**.
+
 ### CMakeLists
 New sources must be added in file `CMakeLists.txt`
 
