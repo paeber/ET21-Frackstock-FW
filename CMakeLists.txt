@@ -23,6 +23,7 @@ include_directories("include")
 add_executable(Frackstock
     source/main.cpp
     source/led_ring.cpp
+    source/device.cpp
 )
 
 pico_set_program_name(Frackstock "Frackstock")
