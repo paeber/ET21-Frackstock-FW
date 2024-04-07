@@ -1,3 +1,10 @@
+//
+// Description: LED Ring and Segment display control
+//
+
+#include "main.h"
+#include "led_ring.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -9,15 +16,15 @@
 
 #include <PicoLed.hpp>
 
-#define LED_PIN 25
 
 // LED Ring
 #define LED_RING_PIN    9
 #define LED_RING_COUNT  12
 
 // Segment display
-#define SDA_PIN 26
-#define SCL_PIN 27
+#define SEG_I2C_PORT    i2c1
+#define SEG_SDA_PIN     26
+#define SEG_SCL_PIN     27
 
 #define PCA_ADDR        0x60
 #define PCA_AI_FLAG     0x10
@@ -61,7 +68,7 @@ const uint8_t segment_digit_8[17] = {
 };
 
 
-int SEG_write_number(uint8_t number){
+void SEG_write_number(uint8_t number){
     uint8_t data[5];
     int ret;
     int tens, ones;
@@ -92,9 +99,64 @@ int SEG_write_number(uint8_t number){
     data[3] = digit_1_out & 0xFF;
     data[4] = digit_1_out >> 8;
 
-    ret = i2c_write_blocking(i2c1, PCA_ADDR, data, 5, false);
-    return 0;
+    ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, data, 5, false);
 }
+
+
+void SEG_write_number_hex(uint8_t number){
+    uint8_t data[5];
+    int ret;
+    int tens, ones;
+    uint16_t digit_1_out = 0x00;
+    uint16_t digit_2_out = 0x00;
+
+    tens = number / 16;
+    ones = number % 16;
+
+    data[0] = PCA_REG_LS0 | PCA_AI_FLAG;
+
+    for (int i = 0; i < 8; i++) {
+        if(segment_digit_8[tens] & (1 << i) ){
+            //digit_1_out &= ~(1 << (seg_order_digit_l[i] % 8));
+        } else {
+            digit_1_out |= (1 << (seg_order_digit_l[i] % 8) * 2);
+        }
+
+        if(segment_digit_8[ones] & (1 << i) ){
+            //digit_2_out &= ~(1 << (seg_order_digit_r[i] % 8));
+        } else {
+            digit_2_out |= (1 << (seg_order_digit_r[i] % 8) * 2);
+        }
+    }
+
+    data[1] = digit_2_out & 0xFF;
+    data[2] = digit_2_out >> 8;    
+    data[3] = digit_1_out & 0xFF;
+    data[4] = digit_1_out >> 8;
+
+    ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, data, 5, false);
+}
+
+
+void SEG_add_dot(uint8_t digit){
+    uint8_t data[5];
+    int ret;
+
+    data[0] = PCA_REG_LS0 | PCA_AI_FLAG;
+    data[1] = PCA9552_read_reg(PCA_REG_LS0);
+    data[2] = PCA9552_read_reg(PCA_REG_LS1);
+    data[3] = PCA9552_read_reg(PCA_REG_LS2);
+    data[4] = PCA9552_read_reg(PCA_REG_LS3);
+
+    if(digit == 2){
+        data[2] &= ~(0x3 << 6);
+    } else if(digit == 1){
+        data[3] &= ~(0x3 << 6);
+    }
+
+    ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, data, 5, false);
+}
+
 
 void SEG_clear(){
     uint8_t data[5];
@@ -106,7 +168,24 @@ void SEG_clear(){
     data[3] = 0x55;
     data[4] = 0x55;
 
-    ret = i2c_write_blocking(i2c1, PCA_ADDR, data, 5, false);
+    ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, data, 5, false);
+}
+
+
+uint8_t PCA9552_read_reg(uint8_t reg){
+    int ret;
+    uint8_t buf[1];
+
+    ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, &reg, 1, true);
+    if(ret < 0){
+        return 0xfe;
+    }
+    ret = i2c_read_blocking(SEG_I2C_PORT, PCA_ADDR, buf, 1, false);
+    if(ret < 0){
+        return 0xfe;
+    }
+
+    return buf[0];
 }
 
 int PCA9552_init(){
@@ -118,84 +197,24 @@ int PCA9552_init(){
     data[2] = 0x55;
     data[3] = 0x00;
     data[4] = 0x55;
+
+    SEG_write_number_hex((uint8_t)(VERSION_MAJOR << 4 | VERSION_MINOR));
+    SEG_add_dot(1);
     
-    ret = i2c_write_blocking(i2c1, PCA_ADDR, data, 5, false);
+    //ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, data, 5, false);
     printf("PCA9552 init: %d\n", ret);
 
     return 0;
 }
 
-
-
-int main() {
-    int ret;
-    uint16_t cnt = 0;
-
-    // Enable UART over USB
-    stdio_init_all();
-
-    // Initialize the GPIO pin
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
-
+int LED_Ring_init(){
     // Initialize the I2C bus
-    i2c_init(i2c1, 100 * 1000);
-    gpio_set_function(SDA_PIN, GPIO_FUNC_I2C);
-    gpio_set_function(SCL_PIN, GPIO_FUNC_I2C);
+    i2c_init(SEG_I2C_PORT, 100 * 1000);
+    gpio_set_function(SEG_SDA_PIN, GPIO_FUNC_I2C);
+    gpio_set_function(SEG_SCL_PIN, GPIO_FUNC_I2C);
 
     // Initialize the PCA9552
     PCA9552_init();
-
-    sleep_ms(1000);
-
-    // 0. Initialize LED strip
-    printf("0. Initialize LED strip\n");
-    auto ledStrip = PicoLed::addLeds<PicoLed::WS2812B>(pio0, 0, LED_RING_PIN, LED_RING_COUNT, PicoLed::FORMAT_GRB);
-    ledStrip.setBrightness(64);
-    printf("1. Clear the strip!\n");
-    
-    // 1. Set all LEDs to red!
-    printf("1. Set all LEDs to red!\n");
-    ledStrip.fill( PicoLed::RGB(255, 0, 0) );
-    ledStrip.show();
-    sleep_ms(500);
-
-    // 2. Set all LEDs to green!
-    printf("2. Set all LEDs to green!\n");
-    ledStrip.fill( PicoLed::RGB(0, 255, 0) );
-    ledStrip.show();
-    sleep_ms(500);
-
-    // 3. Set all LEDs to blue!
-    printf("3. Set all LEDs to blue!\n");
-    ledStrip.fill( PicoLed::RGB(0, 0, 255) );
-    ledStrip.show();
-    sleep_ms(500);
-
-    // 4. Set all LEDs off!
-    printf("4. Set all LEDs to white!\n");
-    ledStrip.fill( PicoLed::RGB(0, 0, 0) );
-    ledStrip.show();
-    sleep_ms(500);
-
-
-    printf("Init done\n");
-
-    while (1) {
-
-        // Toggle LED
-        gpio_get(LED_PIN) ? gpio_put(LED_PIN, 0) : gpio_put(LED_PIN, 1);
-
-
-        SEG_write_number(cnt / 10);
-
-        ledStrip.fillRainbow(0 + cnt * 127 / LED_RING_COUNT, 255 / LED_RING_COUNT);
-        ledStrip.show();
-
-        cnt++;
-
-        sleep_ms(100);
-    }
 
     return 0;
 }

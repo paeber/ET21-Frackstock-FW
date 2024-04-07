@@ -17,14 +17,16 @@ set(PICO_CXX_ENABLE_RTTI 1)
 pico_sdk_init()
 
 include("lib/PicoLed/PicoLed.cmake")
+include_directories("include")
 
 # rest of your project
 add_executable(Frackstock
-    main.cpp
+    source/main.cpp
+    source/led_ring.cpp
 )
 
 pico_set_program_name(Frackstock "Frackstock")
-pico_set_program_version(Frackstock "0.1")
+pico_set_program_version(Frackstock "0.2")
 
 # Add pico_stdlib library which aggregates commonly used features
 target_link_libraries(Frackstock pico_stdlib hardware_i2c PicoLed)
