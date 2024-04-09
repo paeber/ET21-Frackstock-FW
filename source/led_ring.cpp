@@ -21,8 +21,9 @@
 
 
 // LED Ring
-#define LED_RING_PIN    9
-#define LED_RING_COUNT  12
+#define LED_RING_PIN        9
+#define LED_RING_COUNT      12
+#define LED_RING_BRIGHTNESS 64
 
 // Segment display
 #define SEG_I2C_PORT    i2c1
@@ -46,6 +47,8 @@
 #define PCA_OUT_HIGH    0b01
 #define PCA_OUT_PWM0    0b10
 #define PCA_OUT_PWM1    0b11
+
+PicoLed::PicoLedController ledStrip = PicoLed::addLeds<PicoLed::WS2812B>(pio0, 0, LED_RING_PIN, LED_RING_COUNT, PicoLed::FORMAT_GRB);
 
 const uint8_t seg_order_digit[2][8] = {
     {1, 0, 6, 5, 4, 2, 3, 7},
@@ -308,9 +311,28 @@ int LED_Ring_init(){
     // Initialize the PCA9552
     PCA9552_init();
 
+    // Initialize the LED ring
+    ledStrip.setBrightness(LED_RING_BRIGHTNESS);
+    ledStrip.fill( PicoLed::RGB(0, 0, 0) );
+    ledStrip.show();
+
     return 0;
 }
 
 void LED_Ring_Tick(){
+    static uint8_t hue = 0;
+
+    ledStrip.fillRainbow(hue, 255 / LED_RING_COUNT);
+    ledStrip.show();
+
+    hue++;
+}
+
+void SEG_Tick(){
+    static uint8_t number = 0;
+
+    SEG_write_number(number);
+    
+    number++;
 
 }

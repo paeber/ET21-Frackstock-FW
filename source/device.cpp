@@ -16,13 +16,7 @@
 
 // Defines
 #define FLASH_TARGET_OFFSET     (uint32_t)(256 * 1024)
-#define IDX_VERSION             0
-#define IDX_FLASH_CNT           1
-
-#define IDX_BEER                10
-#define IDX_ABREV               11
-#define LEN_ABREV               8
-#define ABREV                   "FRK_ET21"
+#define DEF_ABREV               "FRK_ET21"
  
 
 // Global variables
@@ -81,7 +75,7 @@ int DEV_init() {
             write_data[IDX_VERSION] = VERSION_MAJOR << 4 | VERSION_MINOR;
             write_data[IDX_BEER] = 0;
             write_data[IDX_FLASH_CNT] = 1;
-            memcpy(write_data + IDX_ABREV, ABREV, LEN_ABREV);
+            memcpy(write_data + IDX_ABREV, DEF_ABREV, LEN_ABREV);
         } else {
             write_data[IDX_VERSION] = VERSION_MAJOR << 4 | VERSION_MINOR;
             write_data[IDX_BEER] = flash_target_contents[IDX_BEER];

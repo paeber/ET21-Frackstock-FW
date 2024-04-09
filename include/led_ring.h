@@ -15,6 +15,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <PicoLed.hpp>
+
 // Defines
 #define LED_RING_PIN    9   ///< GPIO pin for the LED ring
 #define LED_RING_COUNT  12  ///< Number of LEDs in the ring
@@ -31,9 +33,13 @@
 #define SEG_G   0x40
 #define SEG_DP  0x80
 
+// Global variables
+extern PicoLed::PicoLedController ledStrip;
+
 // Function prototypes
 int LED_Ring_init();
 void LED_Ring_Tick();
+void SEG_Tick();
 
 int PCA9552_init();
 uint8_t PCA9552_read_reg(uint8_t reg);
