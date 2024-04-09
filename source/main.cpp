@@ -1,5 +1,8 @@
 //
-// Description: This is the main file for the Frackstock Project
+// Frackstock Pico Firmware
+//
+// Author:      Pascal Eberhard
+//
 
 #include "main.h"
 
@@ -29,7 +32,7 @@ int main() {
     gpio_set_dir(BUILTIN_LED_PIN, GPIO_OUT);
 
     // Initialize the LED Ring
-    if(!LED_Ring_init()) {
+    if(LED_Ring_init()) {
         printf("LED Ring init failed\n");
     }
 
