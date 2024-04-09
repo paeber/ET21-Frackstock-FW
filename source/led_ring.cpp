@@ -1,5 +1,8 @@
 //
-// Description: LED Ring and Segment display control
+// LED Ring and Segment display control
+//
+// Description:     LED Ring and Segment display control
+// Author:          Pascal Eberhard
 //
 
 #include "main.h"

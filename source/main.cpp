@@ -1,5 +1,8 @@
 //
-// Description: This is the main file for the Frackstock Project
+// Frackstock Pico Firmware
+//
+// Author:      Pascal Eberhard
+//
 
 #include "main.h"
 

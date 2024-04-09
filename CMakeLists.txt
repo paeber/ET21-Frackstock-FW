@@ -24,13 +24,22 @@ add_executable(Frackstock
     source/main.cpp
     source/led_ring.cpp
     source/device.cpp
+    source/frackstock.cpp
+    source/radio.cpp
 )
 
 pico_set_program_name(Frackstock "Frackstock")
-pico_set_program_version(Frackstock "0.2")
+pico_set_program_version(Frackstock "0.3")
 
 # Add pico_stdlib library which aggregates commonly used features
-target_link_libraries(Frackstock pico_stdlib hardware_i2c hardware_flash PicoLed)
+target_link_libraries(
+    Frackstock 
+    pico_stdlib 
+    hardware_flash
+    hardware_i2c 
+    hardware_spi
+    PicoLed
+)
 
 # create map/bin/hex/uf2 file in addition to ELF.
 pico_add_extra_outputs(Frackstock)
