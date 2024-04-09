@@ -23,6 +23,7 @@ include_directories("include")
 add_executable(Frackstock
     source/main.cpp
     source/led_ring.cpp
+    source/device.cpp
     source/frackstock.cpp
     source/radio.cpp
 )
@@ -34,6 +35,7 @@ pico_set_program_version(Frackstock "0.3")
 target_link_libraries(
     Frackstock 
     pico_stdlib 
+    hardware_flash
     hardware_i2c 
     hardware_spi
     PicoLed

@@ -16,6 +16,8 @@
 #include "hardware/i2c.h"
 
 #include <PicoLed.hpp>
+
+#include "device.h"
 #include "led_ring.h"
 
 
@@ -26,6 +28,16 @@ int main() {
 
     // Enable UART over USB
     stdio_init_all();
+
+    sleep_ms(1000);
+
+    // Print the version
+    printf("Frackstock v%d.%d\n", VERSION_MAJOR, VERSION_MINOR);
+
+    // Initialize device
+    if(DEV_init()) {
+        printf("Device init failed\n");
+    }
 
     // Initialize the GPIO pin
     gpio_init(BUILTIN_LED_PIN);
