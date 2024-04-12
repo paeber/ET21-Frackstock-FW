@@ -5,16 +5,19 @@
 //
 
 #include "frackstock.h"
+#include "device.h"
 
 #include <string.h>
 
-tFrackStock frackstock;
+tFrackStock frackstock = {
+    .id = 0xfe,
+    .beer = 0,
+    .abrev = "FRK_ET21"
+};
 
 
 void FRACK_init() {
-    frackstock.id = 0;
-    frackstock.beer = 0;
-    strcpy(frackstock.abrev, "FRACK_21");
+    DEV_get_frack_data(&frackstock);
 }
 
 

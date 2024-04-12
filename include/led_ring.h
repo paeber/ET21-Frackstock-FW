@@ -33,12 +33,36 @@
 #define SEG_G   0x40
 #define SEG_DP  0x80
 
+// Data structures
+enum eLED_MODE {
+    LED_MODE_OFF = 0,
+    LED_MODE_ON,
+    LED_MODE_CUSTOM,
+    LED_MODE_BLINK,
+    LED_MODE_FADE,
+    LED_MODE_WALK,
+    LED_MODE_RAINBOW,
+};
+
+enum eSEG_MODE {
+    SEG_MODE_OFF = 0,
+    SEG_MODE_ON,
+    SEG_MODE_CUSTOM,
+    SEG_MODE_BEER_DEC,
+    SEG_MODE_BEER_HEX,
+};
+
 // Global variables
+extern eLED_MODE activeLED_MODE;
+extern eSEG_MODE activeSEG_MODE;
 extern PicoLed::PicoLedController ledStrip;
 
 // Function prototypes
 int LED_Ring_init();
 void LED_Ring_Tick();
+
+void LED_Ring_set_mode(eLED_MODE mode);
+
 void SEG_Tick();
 
 int PCA9552_init();
