@@ -11,19 +11,23 @@
 
 #include "pico/stdlib.h"
 #include "pico/time.h"
-#include "hardware/gpio.h"
 #include "pico/binary_info.h"
+
+#include "hardware/gpio.h"
 #include "hardware/i2c.h"
 
-#include <PicoLed.hpp>
 
 #include "device.h"
+#include "frackstock.h"
 #include "led_ring.h"
+
 
 
 
 int main() {
     int ret;
+    static absolute_time_t last_time;
+    static absolute_time_t next_time;
     uint16_t cnt = 0;
 
     // Enable UART over USB
@@ -48,45 +52,50 @@ int main() {
         printf("LED Ring init failed\n");
     }
 
-
-    // 1. Initialize LED strip
-    printf("0. Initialize LED strip\n");
-    auto ledStrip = PicoLed::addLeds<PicoLed::WS2812B>(pio0, 0, LED_RING_PIN, LED_RING_COUNT, PicoLed::FORMAT_GRB);
-    ledStrip.setBrightness(64);
-
-    // 2. Set all LEDs to green!
-    ledStrip.fill( PicoLed::RGB(0, 255, 0) );
-    ledStrip.show();
-    sleep_ms(500);
-
-    // 3. Set all LEDs to blue!
-    ledStrip.fill( PicoLed::RGB(0, 0, 255) );
-    ledStrip.show();
-    sleep_ms(500);
-
-    // 4. Set all LEDs off!
-    ledStrip.fill( PicoLed::RGB(0, 0, 0) );
-    ledStrip.show();
-    sleep_ms(500);
-
+    // Initialize fractstock data
+    FRACK_init();
 
     printf("Init done\n");
     sleep_ms(500);
 
     while (1) {
 
-        // Toggle LED
-        gpio_get(BUILTIN_LED_PIN) ? gpio_put(BUILTIN_LED_PIN, 0) : gpio_put(BUILTIN_LED_PIN, 1);
+        // Set new mode segemnts
+        if(cnt % 500 == 0){
+            activeSEG_MODE = (eSEG_MODE)((activeSEG_MODE + 1) % 5);
+        }
+        
+
+        // Set new mode LED Ring
+        if(cnt % 300 == 0){
+            activeLED_MODE = (eLED_MODE)((activeLED_MODE + 1) % 7);
+        }
+        
 
 
-        SEG_write_number_hex(cnt / 10);
+        // Tasks
+        if(cnt % 2 == 1)
+        {
+            LED_Ring_Tick();
+        }
+        
+        if(cnt % 4 == 0)
+        {
+           SEG_Tick();
+        }
+        
 
-        ledStrip.fillRainbow(0 + cnt, 255 / LED_RING_COUNT);
-        ledStrip.show();
+        if (cnt % 100 == 0)     // Heartbeat
+        {
+            DEV_LED_toggle();
+        }
+        
 
         cnt++;
 
-        sleep_ms(10);
+        last_time = delayed_by_ms(last_time, 10); // Sleep up to 10ms
+        sleep_until(last_time);
+
     }
 
     return 0;
