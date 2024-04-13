@@ -26,10 +26,11 @@ add_executable(Frackstock
     source/device.cpp
     source/frackstock.cpp
     source/radio.cpp
+    source/cc1101.cpp
 )
 
 pico_set_program_name(Frackstock "Frackstock")
-pico_set_program_version(Frackstock "0.3")
+pico_set_program_version(Frackstock "0.4")
 
 # Add pico_stdlib library which aggregates commonly used features
 target_link_libraries(
