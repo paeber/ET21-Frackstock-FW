@@ -9,6 +9,7 @@
 
 #include "radio.h"
 #include "main.h"
+#include "frackstock.h"
 
 #include "cc1101.h"
 #include "ccpacket.h"
@@ -44,28 +45,27 @@ void handleMessage(){
   CCPACKET packet;
   gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
   if (radio.receiveData(&packet) > 0){
-    if (packet.crc_ok && packet.length > 0){
-        if(!doLights){
-            id = (uint8_t)packet.data[0];
-            kat = (uint8_t)packet.data[1];
-            r = (uint8_t)packet.data[2];
-            g = (uint8_t)packet.data[3];
-            b = (uint8_t)packet.data[4];
-            #ifdef PRINT_MESSAGE
-            printf("KAT: %d\n", kat);
-            #endif
+    printf("Received packet...");
+    if (!packet.crc_ok)
+    {
+        printf("crc not ok");
+    }
+    printf("lqi: %d\n", 0x3f - packet.lqi);
+    printf("rssi: %d dBm\n", packet.rssi);
 
+    if (packet.crc_ok && packet.length > 0)
+    {
+        printf("packet: len %d", packet.length);
+        printf("data: ");
+        for(int i=0; i<packet.length; i++)
+        {
+            printf("%02x ", packet.data[i]);
         }
-        printf("Received packet: ");
-        for(int i = 0; i < packet.length; i++) {
-            printf("0x%02x ", packet.data[i]);
-        }
-        printf("\n");
 
         activeSEG_MODE = SEG_MODE_CUSTOM;
         activeLED_MODE = LED_MODE_WALK;
 
-        SEG_write_number_hex(packet.data[1]);   
+        SEG_write_number_hex(packet.data[2]);  
     }
   }
   gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
@@ -88,11 +88,11 @@ void RADIO_init() {
 
     gpio_init(RADIO_GDO1);
     gpio_set_dir(RADIO_GDO1, GPIO_IN);
-    //gpio_pull_up(RADIO_GDO1);
+    gpio_pull_up(RADIO_GDO1);
 
     gpio_init(RADIO_GDO2);
     gpio_set_dir(RADIO_GDO2, GPIO_IN);
-    //gpio_pull_up(RADIO_GDO2);
+    gpio_pull_up(RADIO_GDO2);
 
     //
     sleep_ms(1000);
@@ -101,9 +101,9 @@ void RADIO_init() {
     radio.init();
     radio.setSyncWord(syncWord);
     radio.setCarrierFreq(CFREQ_868);
-    radio.setChannel(0);
+    radio.setChannel(60);
     radio.disableAddressCheck();
-    //radio.setTxPowerAmp(PA_LongDistance);
+    radio.setTxPowerAmp(PA_LongDistance);
 
     // Attach the interrupt
     gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
@@ -116,12 +116,12 @@ void RADIO_send() {
 
     gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
 
-    packet.length = 5;
-    packet.data[0] = 1; //id;
-    packet.data[1] = 0x2e; //kat;
-    packet.data[2] = 3; //r;
-    packet.data[3] = 4; //g;
-    packet.data[4] = 5; //b;
+    packet.length = 4;
+    packet.data[0] = frackstock.id;
+    packet.data[1] = frackstock.beer;
+    packet.data[2] = 0xa2; //r;
+    packet.data[3] = 0xc3; //g;
+
     radio.sendData(packet);
 
     gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);

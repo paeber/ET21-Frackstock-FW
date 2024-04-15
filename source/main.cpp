@@ -21,6 +21,9 @@
 #include "led_ring.h"
 #include "radio.h"
 
+#define SENDER
+#define RECEIVER
+
 int main() {
     int ret;
     static absolute_time_t last_time;
@@ -61,21 +64,31 @@ int main() {
     while (1) {
 
         // Set new mode segemnts
-        if(cnt % 500 == 0){
+        /*if(cnt % 500 == 0){
             activeSEG_MODE = (eSEG_MODE)((activeSEG_MODE + 1) % 5);
-        }
+        }*/
         
 
         // Set new mode LED Ring
         if(cnt % 1000 == 100){
             //activeLED_MODE = (eLED_MODE)((activeLED_MODE + 1) % 7);
-            activeLED_MODE = LED_MODE_RAINBOW;
+            //activeLED_MODE = LED_MODE_RAINBOW;
         }
         
-
+        #ifdef SENDER
         // Send some data
-        if(cnt % 500 == 100){
+        if(cnt % 2000 == 100){
             RADIO_send();
+            activeLED_MODE = LED_MODE_BLINK;
+            activeSEG_MODE = SEG_MODE_CUSTOM;
+            SEG_write_number_hex(0xAA);
+        }
+        #endif
+
+        if(cnt % 400 == 0){
+            activeLED_MODE = LED_MODE_OFF;
+            activeSEG_MODE = SEG_MODE_CUSTOM;
+            SEG_write_number_hex(0xff);
         }
 
 
@@ -85,7 +98,7 @@ int main() {
             RADIO_Tick();
         }
 
-        if(cnt % 2 == 1)
+        if(cnt % 2 == 0)
         {
             LED_Ring_Tick();
         }

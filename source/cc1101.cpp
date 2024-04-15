@@ -75,7 +75,7 @@ CC1101::CC1101(uint8_t _csPin, uint8_t _gdo0Pin, uint8_t _misoPin)
   csPin = _csPin;
   gdo0Pin = _gdo0Pin;
   misoPin = _misoPin;
-  carrierFreq = CFREQ_433;
+  carrierFreq = CFREQ_868;
   channel = CC1101_DEFVAL_CHANNR;
   syncWord[0] = CC1101_DEFVAL_SYNC1;
   syncWord[1] = CC1101_DEFVAL_SYNC0;
@@ -178,7 +178,7 @@ void CC1101::readBurstReg(uint8_t *buffer, uint8_t regAddr, uint8_t len)
 
   for (i = 0; i < len; i++)
     //buffer[i] = SPI.transfer(0x00); // Read result byte by byte
-    buffer[i] = spi_read_blocking(RADIO_SPI_PORT, 0, &buffer[i], 1);
+    spi_read_blocking(RADIO_SPI_PORT, 0, &buffer[i], 1);
 
   cc1101_Deselect();                // Deselect CC1101
 }
