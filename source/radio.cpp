@@ -25,9 +25,8 @@ CC1101 radio(RADIO_SPI_CS, RADIO_GDO1, RADIO_SPI_MISO);
 uint8_t syncWord[2] = {0x47, 0xB5};
 bool packetWaiting = false;
 
-uint8_t last_id, id,kat,r,g,b;
+uint8_t rxFrom_id;
 bool new_message = false;
-bool doLights, doLightsLast = false;
 
 // Function prototypes
 void messageReceived(uint gpio, uint32_t events);
@@ -40,7 +39,6 @@ void messageReceived(uint gpio, uint32_t events) {
 }
 
 // Function definitions
-
 void handleMessage(){
   CCPACKET packet;
   gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
@@ -65,7 +63,8 @@ void handleMessage(){
         activeSEG_MODE = SEG_MODE_CUSTOM;
         activeLED_MODE = LED_MODE_WALK;
 
-        SEG_write_number_hex(packet.data[2]);  
+        rxFrom_id = packet.data[0];
+        SEG_write_number_hex(rxFrom_id);  
     }
   }
   gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
@@ -94,9 +93,6 @@ void RADIO_init() {
     gpio_set_dir(RADIO_GDO2, GPIO_IN);
     gpio_pull_up(RADIO_GDO2);
 
-    //
-    sleep_ms(1000);
-
     // Initialize the radio
     radio.init();
     radio.setSyncWord(syncWord);
@@ -107,7 +103,6 @@ void RADIO_init() {
 
     // Attach the interrupt
     gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
-    //attachInterrupt(CC1101Interrupt, messageReceived, FALLING);
 }
 
 
@@ -119,8 +114,8 @@ void RADIO_send() {
     packet.length = 4;
     packet.data[0] = frackstock.id;
     packet.data[1] = frackstock.beer;
-    packet.data[2] = 0xa2; //r;
-    packet.data[3] = 0xc3; //g;
+    packet.data[2] = 0xa2;
+    packet.data[3] = 0xc3;
 
     radio.sendData(packet);
 

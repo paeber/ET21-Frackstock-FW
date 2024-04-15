@@ -22,7 +22,6 @@
 #include "radio.h"
 
 #define SENDER
-#define RECEIVER
 
 int main() {
     int ret;
@@ -85,7 +84,7 @@ int main() {
         }
         #endif
 
-        if(cnt % 400 == 0){
+        if(cnt % 500 == 0){
             activeLED_MODE = LED_MODE_OFF;
             activeSEG_MODE = SEG_MODE_CUSTOM;
             SEG_write_number_hex(0xff);
