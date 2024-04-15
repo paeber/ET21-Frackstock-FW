@@ -16,13 +16,12 @@
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
 
-
 #include "device.h"
 #include "frackstock.h"
 #include "led_ring.h"
+#include "radio.h"
 
-
-
+#define SENDER
 
 int main() {
     int ret;
@@ -55,26 +54,50 @@ int main() {
     // Initialize fractstock data
     FRACK_init();
 
+    // Initialize the radio
+    RADIO_init();
+
     printf("Init done\n");
     sleep_ms(500);
 
     while (1) {
 
         // Set new mode segemnts
-        if(cnt % 500 == 0){
+        /*if(cnt % 500 == 0){
             activeSEG_MODE = (eSEG_MODE)((activeSEG_MODE + 1) % 5);
-        }
+        }*/
         
 
         // Set new mode LED Ring
-        if(cnt % 300 == 0){
-            activeLED_MODE = (eLED_MODE)((activeLED_MODE + 1) % 7);
+        if(cnt % 1000 == 100){
+            //activeLED_MODE = (eLED_MODE)((activeLED_MODE + 1) % 7);
+            //activeLED_MODE = LED_MODE_RAINBOW;
         }
         
+        #ifdef SENDER
+        // Send some data
+        if(cnt % 2000 == 100){
+            RADIO_send();
+            activeLED_MODE = LED_MODE_BLINK;
+            activeSEG_MODE = SEG_MODE_CUSTOM;
+            SEG_write_number_hex(0xAA);
+        }
+        #endif
+
+        if(cnt % 500 == 0){
+            activeLED_MODE = LED_MODE_OFF;
+            activeSEG_MODE = SEG_MODE_CUSTOM;
+            SEG_write_number_hex(0xff);
+        }
 
 
         // Tasks
-        if(cnt % 2 == 1)
+        if(cnt % 1 == 0)
+        {
+            RADIO_Tick();
+        }
+
+        if(cnt % 2 == 0)
         {
             LED_Ring_Tick();
         }
