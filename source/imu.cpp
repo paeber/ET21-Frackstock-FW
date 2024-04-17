@@ -88,6 +88,8 @@ void IMU_INT2_handle(){
 // Function definitions
 void IMU_init(){
     uint16_t config = 0x0000;
+    uint16_t data_in[16];
+    uint8_t addr = 0;
 
     // Initialize the SPI port
     spi_init(IMU_SPI_PORT, IMU_SPI_BAUDRATE);
@@ -116,25 +118,30 @@ void IMU_init(){
 
 
     // Initialize the IMU
-    uint16_t data_in[16];
+    sleep_ms(350);
 
-    // Read the chip ID
-    BMI_get_reg(BMI323_CHIP_ID, data_in, 1);
-    printf("Chip ID: 0x%02X\n", data_in[0]);
+    // Dummy write/read to wake up the IMU
+    spi_write_blocking(IMU_SPI_PORT, &addr, 1);
+    spi_read16_blocking(IMU_SPI_PORT, 0, data_in, 1);
 
     sleep_ms(350);
 
+    // Read the chip ID
+    BMI_get_reg(BMI323_CHIP_ID, data_in, 1);
+    printf("Chip ID: 0x%04X\n", data_in[0]);
+
     // Read the error register
     BMI_get_reg(BMI323_ERR_REG, data_in, 1);
-    printf("Error register: 0x%02X\n", data_in[0]);
-    if(data_in[0] & 0x1) {
-        printf("IMU Fatal Error\n");
+    printf("Error register: 0x%04X\n", data_in[0]);
+    if(!(data_in[0] & 0x0001)) {
+        printf("IMU Power Error\n");
     }
 
+    // Read the status register
     BMI_get_reg(BMI323_STATUS, data_in, 1);
     printf("Status register: 0x%02X\n", data_in[0]);
     if(data_in[0] & 0x1) {
-        printf("IMU Fatal Error\n");
+        printf("IMU OK\n");
     }
 
     // Enable feature engine
@@ -147,50 +154,90 @@ void IMU_init(){
     BMI_set_reg(BMI323_FEATURE_CTRL, &config, 1);
 
     config = 0x0000;
-    //while((config & 0x0f) != 0x01){
-        //BMI_get_reg(BMI323_FEATURE_IO_STATUS, &config, 1);
-        //sleep_ms(1);
-    //}
-
     for(int i = 0; i < 200; i++){
-        BMI_get_reg(BMI323_FEATURE_IO_STATUS, &config, 1);
-        sleep_ms(2);
+        BMI_get_reg(BMI323_FEATURE_IO1, &config, 1);
+        sleep_ms(10);
         if((config & 0x0f) == 0x01){
             break;
         }
         printf(".");
     }
+    if((config & 0x0f) == 0x01){
+        printf("\nFeature engine enabled\n");
+    } else {
+        printf("\nFeature engine not enabled\n");
+    }
+
+    // 3. Configure the device for low power mode
+    // config = 0x3127;
+    // BMI_set_reg(0x20, &config, 1);
+
+    // BMI_get_reg(BMI323_STATUS, &config, 1);
+    // if(!(config & 0x0080)){
+    //     printf("IMU no data\n");
+    // } else {
+    //     BMI_get_reg(BMI323_ACC_X, data_in, 3);
+    //     BMI_get_reg(BMI323_SAT_FLAGS, &config, 1);
+    //     if(config & 0x07 == 0x0){
+    //         printf("Data ok\n");
+    //     } else {
+    //         printf("Data saturated\n");
+    //     }
+    // }
+
+    // 4. Configure the device for normal mode
+    config = 0x4027;
+    BMI_set_reg(BMI323_ACC_CONF, &config, 1);
+    config = 0x404B;
+    BMI_set_reg(BMI323_GYR_CONF, &config, 1);
     
-    printf("Feature engine enabled\n");
-
-
-    
+    BMI_get_reg(BMI323_ACC_X, data_in, 3);
 
     
-    // Configure Tab detection
-    BMI_get_reg(0x1E, &config, 1);
-    config |= ~(0b11); // Select x axis
-    BMI_set_reg(0x1E, &config, 1);
-
-    BMI_get_reg(BMI323_FEATURE_IO0, &config, 1);
-    config |= SINGLE_TAP_EN; // Enable single tap detection
-    config |= DOUBLE_TAP_EN; // Enable double tap detection
-    config |= TRIPPLE_TAP_EN; // Enable tripple tap detection
-    BMI_set_reg(BMI323_FEATURE_IO0, &config, 1);
-
-    // Configure the BMI interrupts
-    BMI_get_reg(BMI323_INT_MAP2, &config, 1);
-    config |= (0b01 << 0); // Map tap detection to INT1
-    BMI_set_reg(BMI323_INT_MAP2, &config, 1);
-
+    
+    
 
     // Enable the accelerometer
-    uint16_t acc_conf = 0x0028 | (0b100 << 12) | (0b1001 << 0); // Normal mode | 200 Hz
-    BMI_set_reg(BMI323_ACC_CONF, &acc_conf, 1);
+    //uint16_t acc_conf = 0x0028 | (0b100 << 12) | (0b1001 << 0); // Normal mode | 200 Hz
+    //BMI_set_reg(BMI323_ACC_CONF, &acc_conf, 1);
 
-    // Enable the gyroscope
-    uint16_t gyr_conf = 0x0048 | (0b100 << 12) | (0b1001 << 0); // Normal mode | 200 Hz
-    BMI_set_reg(BMI323_GYR_CONF, &gyr_conf, 1);
+    // BMI_get_reg(BMI323_ACC_CONF, &config, 1);
+    // config |= (0b100 << 12); // Normal mode 
+    // config |= (0b1001 << 0); // 200 Hz
+    // BMI_set_reg(BMI323_ACC_CONF, &config, 1);
+    
+
+    
+    // // Configure Tab detection
+    // BMI_get_reg(BMI323_TAP_1, &config, 1);
+    // config &= ~(0b11); // Select x axis
+    // BMI_set_reg(BMI323_TAP_1, &config, 1);
+
+    // BMI_get_reg(BMI323_FEATURE_IO0, &config, 1);
+    // config |= SINGLE_TAP_EN; // Enable single tap detection
+    // config |= DOUBLE_TAP_EN; // Enable double tap detection
+    // config |= TRIPPLE_TAP_EN; // Enable tripple tap detection
+    // BMI_set_reg(BMI323_FEATURE_IO0, &config, 1);
+
+    // // Configure the BMI interrupts
+    // BMI_get_reg(BMI323_IO_INT_CTRL, &config, 1);
+    // config |= 0x0404; // 
+    // BMI_set_reg(BMI323_IO_INT_CTRL, &config, 1);
+
+    // BMI_get_reg(BMI323_INT_MAP2, &config, 1);
+    // config |= (0b01 << 0); // Map tap detection to INT1
+    // BMI_set_reg(BMI323_INT_MAP2, &config, 1);
+
+    
+
+
+    // // Enable the accelerometer
+    // uint16_t acc_conf = 0x0028 | (0b100 << 12) | (0b1001 << 0); // Normal mode | 200 Hz
+    // BMI_set_reg(BMI323_ACC_CONF, &acc_conf, 1);
+
+    // // Enable the gyroscope
+    // uint16_t gyr_conf = 0x0048 | (0b100 << 12) | (0b1001 << 0); // Normal mode | 200 Hz
+    // BMI_set_reg(BMI323_GYR_CONF, &gyr_conf, 1);
 
 
     // Set up the interrupt
@@ -222,8 +269,8 @@ void IMU_Tick(){
 
     // Read temperature
     BMI_get_reg(BMI323_TEMP, reg_data, 1);
-    printf("Temperature: %d\n", (int16_t)reg_data[0]);
-
+    float temperature_value = (float)((((float)((int16_t)reg_data[0])) / 512.0) + 23.0);
+    printf("Temperature: %.2f C\n", temperature_value);
 
 
     //readAllAccel();
@@ -288,6 +335,9 @@ void BMI323_soft_reset()
   uint16_t data = 0xDEAF;
   BMI_set_reg(BMI323_CMD, &data, 1);
   sleep_ms(100);
+  BMI323_Select();
+  sleep_ms(1);
+  BMI323_Deselect();
 }
 
 void readAllAccel() {
