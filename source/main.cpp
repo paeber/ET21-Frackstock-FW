@@ -47,11 +47,6 @@ int main() {
     gpio_init(BUILTIN_LED_PIN);
     gpio_set_dir(BUILTIN_LED_PIN, GPIO_OUT);
 
-    // Initialize the LED Ring
-    if(LED_Ring_init()) {
-        printf("LED Ring init failed\n");
-    }
-
     // Initialize fractstock data
     FRACK_init();
 
@@ -60,6 +55,11 @@ int main() {
 
     // Initialize the radio
     RADIO_init();
+
+    // Initialize the LED Ring
+    if(LED_Ring_init()) {
+        printf("LED Ring init failed\n");
+    }
 
     printf("Init done\n");
     sleep_ms(500);
@@ -106,7 +106,7 @@ int main() {
             LED_Ring_Tick();
         }
 
-        if(cnt % 1000 == 0)
+        if(cnt % 50 == 0)
         {
             IMU_Tick();
         }

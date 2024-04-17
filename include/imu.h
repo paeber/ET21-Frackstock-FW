@@ -48,11 +48,29 @@ extern "C" {
 #define BMI323_ACC_CONF             0x20
 #define BMI323_GYR_CONF             0x21
 
+#define BMI323_IO_INT_CTRL          0x38
+#define BMI323_INT_CONF             0x39
+#define BMI323_INT_MAP1             0x3A
+#define BMI323_INT_MAP2             0x3B
+
+#define BMI323_FEATURE_CTRL             0x40
+#define BMI323_FEATURE_DATA_ADDR        0x41
+#define BMI323_FEATURE_DATA_TX          0x42
+#define BMI323_FEATURE_DATA_STATUS      0x43
+#define BMI323_FEATRUE_ENGINE_STATUS    0x45
+#define BMI323_FEATURE_EVENT_EXT        0x47
 
 
 #define BMI323_CMD                  0x7E
 #define BMI323_CFG_RESET            0x7F
 
+
+#define SINGLE_TAP_DETECT           (0x1 << 3)
+#define DOUBLE_TAP_DETECT           (0x1 << 4)
+#define TRIPPLE_TAP_DETECT          (0x1 << 5)
+#define SINGLE_TAP_EN               (0x1 << 12)
+#define DOUBLE_TAP_EN               (0x1 << 13)
+#define TRIPPLE_TAP_EN              (0x1 << 14)
 
 // Functions
 void BMI_set_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length);
