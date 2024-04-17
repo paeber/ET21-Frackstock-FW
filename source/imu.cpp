@@ -35,11 +35,14 @@ void IMU_init(){
     gpio_set_function(IMU_SPI_MISO, GPIO_FUNC_SPI);
     //gpio_set_function(IMU_SPI_CS, GPIO_FUNC_SPI);
 
-    spi_set_format(IMU_SPI_PORT, 16, SPI_CPOL_1, SPI_CPHA_1, SPI_MSB_FIRST);
+    //spi_set_format(IMU_SPI_PORT, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 
     gpio_init(IMU_SPI_CS);
     gpio_set_dir(IMU_SPI_CS, GPIO_OUT);
+    gpio_put(IMU_SPI_CS, 0);
+    sleep_ms(1);
     gpio_put(IMU_SPI_CS, 1);
+    sleep_ms(1);
 
     // Initialize the INT pins
     gpio_init(IMU_INT1);
@@ -53,14 +56,17 @@ void IMU_init(){
     // Soft reset the IMU
     //BMI323_soft_reset();
 
+
+
+
     // Initialize the IMU
     uint16_t data_in[16];
 
     // Read the chip ID
     BMI_get_reg(BMI323_CHIP_ID, data_in, 1);
-    sleep_ms(100);
-    BMI_get_reg(BMI323_CHIP_ID, data_in, 1);
     printf("Chip ID: 0x%02X\n", data_in[0]);
+
+    sleep_ms(350);
 
     // Read the error register
     BMI_get_reg(BMI323_ERR_REG, data_in, 1);
@@ -68,6 +74,21 @@ void IMU_init(){
     if(data_in[0] & 0x1) {
         printf("IMU Fatal Error\n");
     }
+
+    BMI_get_reg(BMI323_STATUS, data_in, 1);
+    printf("Status register: 0x%02X\n", data_in[0]);
+    if(data_in[0] & 0x1) {
+        printf("IMU Fatal Error\n");
+    }
+
+
+    uint16_t acc_conf = 0x0028 | (0x1 << 14);
+    BMI_set_reg(BMI323_ACC_CONF, &acc_conf, 1);
+
+    uint16_t gyr_conf = 0x0048 | (0x1 << 14);
+    BMI_set_reg(BMI323_GYR_CONF, &gyr_conf, 1);
+
+
     
     //return data_in[0] & 0x01;
 }
@@ -75,17 +96,17 @@ void IMU_init(){
 void IMU_Tick(){
     uint16_t reg_data[16];
 
-    /*
+
     // Read accelerometer data
     BMI_get_reg(BMI323_ACC_X, reg_data, 3);
-    printf("Acc X: %d, Y: %d, Z: %d\n", reg_data[0], reg_data[1], reg_data[2]);
+    printf("Acc X: %d, Y: %d, Z: %d\n", (int16_t)reg_data[0], (int16_t)reg_data[1], (int16_t)reg_data[2]);
 
     // Read gyroscope data
     BMI_get_reg(BMI323_GYR_X, reg_data, 3);
-    printf("Gyr X: %d, Y: %d, Z: %d\n", reg_data[0], reg_data[1], reg_data[2]);
-  */
+    printf("Gyr X: %d, Y: %d, Z: %d\n", (int16_t)reg_data[0], (int16_t)reg_data[1], (int16_t)reg_data[2]);
 
-    readAllAccel();
+
+    //readAllAccel();
 
 
 
@@ -98,11 +119,11 @@ void BMI_set_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length){
 
     spi_write_blocking(IMU_SPI_PORT, &reg_addr, 1);
     for(int i = 0; i < length; i++){
-        //data_out = reg_data[i] & 0xFF; // Lower byte
-        //spi_write_blocking(IMU_SPI_PORT, &data_out, 1);
-        //data_out = reg_data[i] >> 8; // Upper byte
-        //spi_write_blocking(IMU_SPI_PORT, &data_out, 1);
-        spi_write16_blocking(IMU_SPI_PORT, &reg_data[i], 1);
+        data_out = reg_data[i] & 0xFF; // Lower byte
+        spi_write_blocking(IMU_SPI_PORT, &data_out, 1);
+        data_out = reg_data[i] >> 8; // Upper byte
+        spi_write_blocking(IMU_SPI_PORT, &data_out, 1);
+        //spi_write16_blocking(IMU_SPI_PORT, &reg_data[i], 1);
     }
 
     BMI323_Deselect();
@@ -110,10 +131,11 @@ void BMI_set_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length){
 
 void BMI_get_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length){
     uint16_t buf;
-    uint8_t dummy = reg_addr | 0x80;
+    uint8_t addr = reg_addr | 0x80;
+    uint8_t dummy;
     BMI323_Select();
 
-    spi_write_blocking(IMU_SPI_PORT, &dummy, 1);
+    spi_write_blocking(IMU_SPI_PORT, &addr, 1);
     spi_read_blocking(IMU_SPI_PORT, 0, &dummy, 1);  // Dummy read
     for(int i = 0; i < length; i++){
         spi_read16_blocking(IMU_SPI_PORT, 0, &buf, 1);
@@ -127,6 +149,7 @@ void BMI_get_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length){
 void BMI323_Select()
 {
   gpio_put(IMU_SPI_CS, 0);
+  sleep_us(10);
 }
 
 void BMI323_Deselect()
@@ -149,7 +172,7 @@ void BMI323_soft_reset()
 
 void readAllAccel() {
   uint8_t address = 0x03;
-  uint8_t txBuf[1] = {address | 0x80}; // read operation, MSB is 1
+  uint8_t txBuf[1] = {(uint8_t)(address | 0x80)}; // read operation, MSB is 1
   uint8_t rxBuf[20] = {0}; // initialize to 0
   //HAL_GPIO_WritePin(GPIOA, SPI_CS_Pin, GPIO_PIN_RESET); // make chip select low to enable transmission
   BMI323_Select();
