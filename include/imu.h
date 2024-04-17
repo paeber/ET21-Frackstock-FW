@@ -50,10 +50,13 @@ extern "C" {
 
 
 
+#define BMI323_CMD                  0x7E
+#define BMI323_CFG_RESET            0x7F
+
 
 // Functions
-void BMI_set_reg(uint8_t reg_addr, uint8_t *reg_data, uint32_t length);
-void BMI_get_reg(uint8_t reg_addr, uint8_t *reg_data, uint32_t length);
+void BMI_set_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length);
+void BMI_get_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length);
 
 void IMU_init();
 void IMU_Tick();
