@@ -20,6 +20,7 @@
 #include "frackstock.h"
 #include "led_ring.h"
 #include "radio.h"
+#include "imu.h"
 
 #define SENDER
 
@@ -53,6 +54,9 @@ int main() {
 
     // Initialize fractstock data
     FRACK_init();
+
+    // Initialize IMU
+    IMU_init();
 
     // Initialize the radio
     RADIO_init();
@@ -100,6 +104,11 @@ int main() {
         if(cnt % 2 == 0)
         {
             LED_Ring_Tick();
+        }
+
+        if(cnt % 1000 == 0)
+        {
+            IMU_Tick();
         }
         
         if(cnt % 4 == 0)
