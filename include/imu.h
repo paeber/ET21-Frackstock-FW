@@ -45,12 +45,6 @@ extern "C" {
 #define BMI323_FIFO_FILL_LEVEL      0x15
 #define BMI323_FIFO_DATA            0x16
 
-#define BMI323_ORIENT_1             0x1C
-#define BMI323_ORIENT_2             0x1D
-#define BMI323_TAP_1                0x1E
-#define BMI323_TAP_2                0x1F
-#define BMI323_TAP_3                0x20
-
 
 #define BMI323_ACC_CONF             0x20
 #define BMI323_GYR_CONF             0x21
@@ -70,6 +64,12 @@ extern "C" {
 
 #define BMI323_CMD                  0x7E
 #define BMI323_CFG_RESET            0x7F
+
+#define FEATURE_ORIENT_1            0x1C
+#define FEATURE_ORIENT_2            0x1D
+#define FEATURE_TAP_1               0x1E
+#define FEATURE_TAP_2               0x1F
+#define FEATURE_TAP_3               0x20
 
 
 #define SINGLE_TAP_DETECT           (0x1 << 3)

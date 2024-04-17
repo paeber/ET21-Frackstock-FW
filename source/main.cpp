@@ -106,7 +106,7 @@ int main() {
             LED_Ring_Tick();
         }
 
-        if(cnt % 500 == 0)
+        if(cnt % 50 == 0)
         {
             IMU_Tick();
         }

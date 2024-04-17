@@ -24,7 +24,6 @@ void BMI323_Select();
 void BMI323_Deselect();
 void BMI323_wait_Miso();
 void BMI323_soft_reset();
-void readAllAccel();
 
 void IMU_INT1_irq(uint gpio, uint32_t events);
 void IMU_INT2_irq(uint gpio, uint32_t events);
@@ -39,10 +38,12 @@ bool IMU_INT2_flag = false;
 // Interrupt functions
 void IMU_INT1_irq(uint gpio, uint32_t events) {
     IMU_INT1_flag = true;
+    printf("->IMU INT1\n");
 }
 
 void IMU_INT2_irq(uint gpio, uint32_t events) {
     IMU_INT2_flag = true;
+    printf("->IMU INT2\n");
 }
 
 void IMU_INT1_handle(){
@@ -133,7 +134,7 @@ void IMU_init(){
     // Read the error register
     BMI_get_reg(BMI323_ERR_REG, data_in, 1);
     printf("Error register: 0x%04X\n", data_in[0]);
-    if(!(data_in[0] & 0x0001)) {
+    if(data_in[0] & 0x0001) {
         printf("IMU Power Error\n");
     }
 
@@ -144,7 +145,9 @@ void IMU_init(){
         printf("IMU OK\n");
     }
 
+    // 
     // Enable feature engine
+    //
     config = 0x012C;
     BMI_set_reg(BMI323_FEATURE_IO2, &config, 1);
     config = 0x0001;
@@ -160,7 +163,6 @@ void IMU_init(){
         if((config & 0x0f) == 0x01){
             break;
         }
-        printf(".");
     }
     if((config & 0x0f) == 0x01){
         printf("\nFeature engine enabled\n");
@@ -186,58 +188,54 @@ void IMU_init(){
     // }
 
     // 4. Configure the device for normal mode
-    config = 0x4027;
-    BMI_set_reg(BMI323_ACC_CONF, &config, 1);
-    config = 0x404B;
-    BMI_set_reg(BMI323_GYR_CONF, &config, 1);
-    
-    BMI_get_reg(BMI323_ACC_X, data_in, 3);
-
-    
-    
-    
+    // config = 0x4027;
+    // BMI_set_reg(BMI323_ACC_CONF, &config, 1);
+    // config = 0x404B;
+    // BMI_set_reg(BMI323_GYR_CONF, &config, 1);
+    // BMI_get_reg(BMI323_ACC_X, data_in, 3);
 
     // Enable the accelerometer
-    //uint16_t acc_conf = 0x0028 | (0b100 << 12) | (0b1001 << 0); // Normal mode | 200 Hz
-    //BMI_set_reg(BMI323_ACC_CONF, &acc_conf, 1);
+    uint16_t acc_conf = 0x0028; // Default value
+    acc_conf |= (0b100 << 12);  // Normal mode
+    acc_conf |= (0b1001 << 0);  // 200 Hz
+    BMI_set_reg(BMI323_ACC_CONF, &acc_conf, 1);
+    BMI_get_reg(BMI323_ACC_X, data_in, 3);
 
-    // BMI_get_reg(BMI323_ACC_CONF, &config, 1);
-    // config |= (0b100 << 12); // Normal mode 
-    // config |= (0b1001 << 0); // 200 Hz
-    // BMI_set_reg(BMI323_ACC_CONF, &config, 1);
-    
-
-    
-    // // Configure Tab detection
-    // BMI_get_reg(BMI323_TAP_1, &config, 1);
-    // config &= ~(0b11); // Select x axis
-    // BMI_set_reg(BMI323_TAP_1, &config, 1);
-
-    // BMI_get_reg(BMI323_FEATURE_IO0, &config, 1);
-    // config |= SINGLE_TAP_EN; // Enable single tap detection
-    // config |= DOUBLE_TAP_EN; // Enable double tap detection
-    // config |= TRIPPLE_TAP_EN; // Enable tripple tap detection
-    // BMI_set_reg(BMI323_FEATURE_IO0, &config, 1);
-
-    // // Configure the BMI interrupts
-    // BMI_get_reg(BMI323_IO_INT_CTRL, &config, 1);
-    // config |= 0x0404; // 
-    // BMI_set_reg(BMI323_IO_INT_CTRL, &config, 1);
-
-    // BMI_get_reg(BMI323_INT_MAP2, &config, 1);
-    // config |= (0b01 << 0); // Map tap detection to INT1
-    // BMI_set_reg(BMI323_INT_MAP2, &config, 1);
+    // Enable the gyroscope
+    uint16_t gyr_conf = 0x0048; // Default value 
+    gyr_conf |= (0b100 << 12);  // Normal mode
+    gyr_conf |= (0b1001 << 0);  // 200 Hz
+    BMI_set_reg(BMI323_GYR_CONF, &gyr_conf, 1);
+    BMI_get_reg(BMI323_GYR_X, data_in, 3);
 
     
+    //
+    // Configure Features
+    //
+
+    // Configure Tab detection
+    // uint16_t fAddr = (uint16_t)FEATURE_TAP_1;
+    // config = 0x0074;
+    // BMI_set_reg(BMI323_FEATURE_DATA_ADDR, &fAddr, 1);
+    // BMI_set_reg(BMI323_FEATURE_DATA_TX, &config, 1);
 
 
-    // // Enable the accelerometer
-    // uint16_t acc_conf = 0x0028 | (0b100 << 12) | (0b1001 << 0); // Normal mode | 200 Hz
-    // BMI_set_reg(BMI323_ACC_CONF, &acc_conf, 1);
+    BMI_get_reg(BMI323_FEATURE_IO0, &config, 1);
+    config |= SINGLE_TAP_EN;    // Enable single tap detection
+    config |= DOUBLE_TAP_EN;    // Enable double tap detection
+    config |= TRIPPLE_TAP_EN;   // Enable tripple tap detection
+    BMI_set_reg(BMI323_FEATURE_IO0, &config, 1);
 
-    // // Enable the gyroscope
-    // uint16_t gyr_conf = 0x0048 | (0b100 << 12) | (0b1001 << 0); // Normal mode | 200 Hz
-    // BMI_set_reg(BMI323_GYR_CONF, &gyr_conf, 1);
+
+    //
+    // Configure the BMI interrupts
+    //
+    config = 0x0404; // 
+    BMI_set_reg(BMI323_IO_INT_CTRL, &config, 1);
+
+    BMI_get_reg(BMI323_INT_MAP2, &config, 1);
+    config = (config & (~0b11)) | (0b01 << 0); // Map tap detection to INT1
+    BMI_set_reg(BMI323_INT_MAP2, &config, 1);
 
 
     // Set up the interrupt
@@ -259,23 +257,18 @@ void IMU_Tick(){
         IMU_INT2_handle();
     }
 
-    // Read accelerometer data
-    BMI_get_reg(BMI323_ACC_X, reg_data, 3);
-    printf("Acc X: %d, Y: %d, Z: %d\n", (int16_t)reg_data[0], (int16_t)reg_data[1], (int16_t)reg_data[2]);
+    // // Read accelerometer data
+    // BMI_get_reg(BMI323_ACC_X, reg_data, 3);
+    // printf("Acc X: %d, Y: %d, Z: %d\n", (int16_t)reg_data[0], (int16_t)reg_data[1], (int16_t)reg_data[2]);
 
-    // Read gyroscope data
-    BMI_get_reg(BMI323_GYR_X, reg_data, 3);
-    printf("Gyr X: %d, Y: %d, Z: %d\n", (int16_t)reg_data[0], (int16_t)reg_data[1], (int16_t)reg_data[2]);
+    // // Read gyroscope data
+    // BMI_get_reg(BMI323_GYR_X, reg_data, 3);
+    // printf("Gyr X: %d, Y: %d, Z: %d\n", (int16_t)reg_data[0], (int16_t)reg_data[1], (int16_t)reg_data[2]);
 
-    // Read temperature
-    BMI_get_reg(BMI323_TEMP, reg_data, 1);
-    float temperature_value = (float)((((float)((int16_t)reg_data[0])) / 512.0) + 23.0);
-    printf("Temperature: %.2f C\n", temperature_value);
-
-
-    //readAllAccel();
-
-
+    // // Read temperature
+    // BMI_get_reg(BMI323_TEMP, reg_data, 1);
+    // float temperature_value = (float)((((float)((int16_t)reg_data[0])) / 512.0) + 23.0);
+    // printf("Temperature: %.2f C\n", temperature_value);
 
 }
 
@@ -338,33 +331,4 @@ void BMI323_soft_reset()
   BMI323_Select();
   sleep_ms(1);
   BMI323_Deselect();
-}
-
-void readAllAccel() {
-  uint8_t address = 0x03;
-  uint8_t txBuf[1] = {(uint8_t)(address | 0x80)}; // read operation, MSB is 1
-  uint8_t rxBuf[20] = {0}; // initialize to 0
-  //HAL_GPIO_WritePin(GPIOA, SPI_CS_Pin, GPIO_PIN_RESET); // make chip select low to enable transmission
-  BMI323_Select();
-  //HAL_SPI_TransmitReceive(&hspi1, txBuf, rxBuf, 1, 10); // send address and receive data
-  spi_write_read_blocking(IMU_SPI_PORT, txBuf, rxBuf, 1);
-  //HAL_SPI_TransmitReceive(&hspi1, &txBuf[1], &rxBuf[1], 19, 10); // receive the rest of the data
-  spi_write_read_blocking(IMU_SPI_PORT, &txBuf[1], &rxBuf[1], 19);
-  //HAL_GPIO_WritePin(GPIOA, SPI_CS_Pin, GPIO_PIN_SET); // make chip select high at the end of transmission
-  BMI323_Deselect();
-
-  //Offset = 2 because the 2 first bytes are dummy (useless)
-  int offset = 2;
-  uint16_t x, y, z, gyr_x, gyr_y, gyr_z, temperature;
-  x = ((rxBuf[offset + 1] << 8 | (uint16_t)rxBuf[offset + 0])); //0x03
-  y = ((rxBuf[offset + 3] << 8 | (uint16_t)rxBuf[offset + 2])); //0x04
-  z = ((rxBuf[offset + 5] << 8 | (uint16_t)rxBuf[offset + 4])); //0x05
-  gyr_x = (rxBuf[offset + 7] << 8 | (uint16_t)rxBuf[offset + 6]); //0x06
-  gyr_y = (rxBuf[offset + 9] << 8 | (uint16_t)rxBuf[offset + 8]); //0x07
-  gyr_z = (rxBuf[offset + 11] << 8 | (uint16_t)rxBuf[offset + 10]); //0x08
-  temperature = (rxBuf[offset + 13] << 8 | (uint16_t)rxBuf[offset + 12]); //0x09
-
-  printf("Accel: X: %d, Y: %d, Z: %d\n", x, y, z);
-  printf("Gyro: X: %d, Y: %d, Z: %d\n", gyr_x, gyr_y, gyr_z);
-  printf("Temperature: %d\n", temperature);
 }
