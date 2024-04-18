@@ -15,6 +15,7 @@
 //#include "bmi323.h"
 //#include "common.h"
 #include "hardware/spi.h"
+#include "hardware/gpio.h"
 
 #include "led_ring.h"
 
@@ -25,8 +26,7 @@ void BMI323_Deselect();
 void BMI323_wait_Miso();
 void BMI323_soft_reset();
 
-void IMU_INT1_irq(uint gpio, uint32_t events);
-void IMU_INT2_irq(uint gpio, uint32_t events);
+void IMU_INT_irq(uint gpio, uint32_t events);
 void IMU_INT1_handle();
 void IMU_INT2_handle();
 
@@ -36,14 +36,15 @@ bool IMU_INT2_flag = false;
 
 
 // Interrupt functions
-void IMU_INT1_irq(uint gpio, uint32_t events) {
-    IMU_INT1_flag = true;
-    printf("->IMU INT1\n");
-}
+void IMU_INT_irq(uint gpio, uint32_t events) {
+    if(gpio == IMU_INT1){
+        IMU_INT1_flag = true;
+        printf("->IMU INT1\n");
+    } else if(gpio == IMU_INT2){
+        IMU_INT2_flag = true;
+        printf("->IMU INT2\n");
+    }
 
-void IMU_INT2_irq(uint gpio, uint32_t events) {
-    IMU_INT2_flag = true;
-    printf("->IMU INT2\n");
 }
 
 void IMU_INT1_handle(){
@@ -53,7 +54,7 @@ void IMU_INT1_handle(){
     printf("IMU INT1: 0x%04X\n", interrupt);
 
     // Check for tap detection
-    if(interrupt & 0x0100){
+    if(interrupt & (0x1 << 8)){
         printf("Tap detected\n");
 
         BMI_get_reg(BMI323_FEATURE_EVENT_EXT, &data, 1);
@@ -80,7 +81,7 @@ void IMU_INT2_handle(){
     printf("IMU INT2: 0x%04X\n", interrupt);
 
     // Check for tap detection
-    if(interrupt & 0x0100){
+    if(interrupt & (0x1 << 8)){
         printf("Tap detected\n");
 
     }
@@ -90,7 +91,7 @@ void IMU_INT2_handle(){
 void IMU_init(){
     uint16_t config = 0x0000;
     uint16_t data_in[16];
-    uint8_t addr = 0;
+    uint8_t addr = 0 | 0x80;
 
     // Initialize the SPI port
     spi_init(IMU_SPI_PORT, IMU_SPI_BAUDRATE);
@@ -198,6 +199,8 @@ void IMU_init(){
     uint16_t acc_conf = 0x0028; // Default value
     acc_conf |= (0b100 << 12);  // Normal mode
     acc_conf |= (0b1001 << 0);  // 200 Hz
+    //acc_conf |= (0b1011 << 0);  // 800 Hz
+    //acc_conf |= (0b001 << 8);   // Average 2 samples
     BMI_set_reg(BMI323_ACC_CONF, &acc_conf, 1);
     BMI_get_reg(BMI323_ACC_X, data_in, 3);
 
@@ -205,6 +208,8 @@ void IMU_init(){
     uint16_t gyr_conf = 0x0048; // Default value 
     gyr_conf |= (0b100 << 12);  // Normal mode
     gyr_conf |= (0b1001 << 0);  // 200 Hz
+    //gyr_conf |= (0b1011 << 0);  // 800 Hz
+    //gyr_conf |= (0b001 << 8);   // Average 2 samples
     BMI_set_reg(BMI323_GYR_CONF, &gyr_conf, 1);
     BMI_get_reg(BMI323_GYR_X, data_in, 3);
 
@@ -214,11 +219,12 @@ void IMU_init(){
     //
 
     // Configure Tab detection
-    // uint16_t fAddr = (uint16_t)FEATURE_TAP_1;
-    // config = 0x0074;
-    // BMI_set_reg(BMI323_FEATURE_DATA_ADDR, &fAddr, 1);
-    // BMI_set_reg(BMI323_FEATURE_DATA_TX, &config, 1);
+    uint16_t fAddr = (uint16_t)FEATURE_TAP_1;
+    config = 0x0074;    // Set x axis
+    BMI_set_reg(BMI323_FEATURE_DATA_ADDR, &fAddr, 1);
+    BMI_set_reg(BMI323_FEATURE_DATA_TX, &config, 1);
 
+    sleep_ms(10);
 
     BMI_get_reg(BMI323_FEATURE_IO0, &config, 1);
     config |= SINGLE_TAP_EN;    // Enable single tap detection
@@ -230,7 +236,8 @@ void IMU_init(){
     //
     // Configure the BMI interrupts
     //
-    config = 0x0404; // 
+    config = 0x0404;    // Enable Interrupt pins 1 and 2 
+    config |= 0x0202;   // Enable open drain
     BMI_set_reg(BMI323_IO_INT_CTRL, &config, 1);
 
     BMI_get_reg(BMI323_INT_MAP2, &config, 1);
@@ -239,14 +246,15 @@ void IMU_init(){
 
 
     // Set up the interrupt
-    gpio_set_irq_enabled_with_callback(IMU_INT1, GPIO_IRQ_EDGE_FALL, true, &IMU_INT1_irq);
-    gpio_set_irq_enabled_with_callback(IMU_INT2, GPIO_IRQ_EDGE_FALL, true, &IMU_INT2_irq);
+    gpio_set_irq_enabled_with_callback(IMU_INT1, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &IMU_INT_irq);
+    gpio_set_irq_enabled_with_callback(IMU_INT2, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &IMU_INT_irq);
     
     //return data_in[0] & 0x01;
 }
 
 void IMU_Tick(){
     uint16_t reg_data[16];
+    uint16_t data;
 
     // Check for interrupts
     if(IMU_INT1_flag){
@@ -269,6 +277,32 @@ void IMU_Tick(){
     // BMI_get_reg(BMI323_TEMP, reg_data, 1);
     // float temperature_value = (float)((((float)((int16_t)reg_data[0])) / 512.0) + 23.0);
     // printf("Temperature: %.2f C\n", temperature_value);
+
+    //BMI_get_reg(BMI323_FEATURE_IO1, &data, 1);
+    //printf("TICK: IMU IO1: 0x%04X\n", data);
+
+    BMI_get_reg(BMI323_INT_STATUS_INT1, &data, 1);
+    //printf("TICK: IMU INT1: 0x%04X\n", data);
+
+    // Check for tap detection
+    if(data & (0x1 << 8)){
+        printf("TICK: Tap detected\n");
+
+        BMI_get_reg(BMI323_FEATURE_EVENT_EXT, &data, 1);
+
+        if(data & SINGLE_TAP_DETECT){
+            printf("Single tap detected\n");
+            activeLED_MODE = LED_MODE_RAINBOW;
+        } else if(data & DOUBLE_TAP_DETECT){
+            printf("Double tap detected\n");
+            activeLED_MODE = LED_MODE_FADE;
+        } else if(data & TRIPPLE_TAP_DETECT){
+            printf("Tripple tap detected\n");
+            activeLED_MODE = LED_MODE_ON;
+        } else {
+            printf("Unknown detected: 0x%04X\n", data);
+        }
+    }
 
 }
 

@@ -80,7 +80,7 @@ int main() {
         
         #ifdef SENDER
         // Send some data
-        if(cnt % 2000 == 100){
+        if(cnt % 1500 == 100){
             RADIO_send();
             activeLED_MODE = LED_MODE_BLINK;
             activeSEG_MODE = SEG_MODE_CUSTOM;
@@ -88,7 +88,7 @@ int main() {
         }
         #endif
 
-        if(cnt % 500 == 0){
+        if(cnt % 500 == 400){
             activeLED_MODE = LED_MODE_OFF;
             activeSEG_MODE = SEG_MODE_CUSTOM;
             SEG_write_number_hex(0xff);
@@ -106,7 +106,7 @@ int main() {
             LED_Ring_Tick();
         }
 
-        if(cnt % 50 == 0)
+        if(cnt % 100 == 0)
         {
             IMU_Tick();
         }
