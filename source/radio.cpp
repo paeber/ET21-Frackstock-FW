@@ -31,6 +31,7 @@ bool new_message = false;
 // Function prototypes
 void messageReceived(uint gpio, uint32_t events);
 void handleMessage();
+int RADIO_get_rssi(uint8_t raw_rssi);
 
 // Interrupt functions
 void messageReceived(uint gpio, uint32_t events) {
@@ -43,22 +44,23 @@ void handleMessage(){
   CCPACKET packet;
   gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
   if (radio.receiveData(&packet) > 0){
-    printf("Received packet...");
+    printf("Received packet...\n");
     if (!packet.crc_ok)
     {
         printf("crc not ok");
     }
-    printf("lqi: %d\n", 0x3f - packet.lqi);
-    printf("rssi: %d dBm\n", packet.rssi);
+    printf("lqi: %d, ", 0x3f - packet.lqi);
+    printf("rssi: %d dBm\n", RADIO_get_rssi(packet.rssi));
 
     if (packet.crc_ok && packet.length > 0)
     {
-        printf("packet: len %d", packet.length);
+        printf("packet: len %d, ", packet.length);
         printf("data: ");
         for(int i=0; i<packet.length; i++)
         {
             printf("%02x ", packet.data[i]);
         }
+        printf("\n");
 
         activeSEG_MODE = SEG_MODE_CUSTOM;
         activeLED_MODE = LED_MODE_WALK;
@@ -97,7 +99,7 @@ void RADIO_init() {
     radio.init();
     radio.setSyncWord(syncWord);
     radio.setCarrierFreq(CFREQ_868);
-    radio.setChannel(60);
+    radio.setChannel(RADIO_CHANNEL);
     radio.disableAddressCheck();
     radio.setTxPowerAmp(PA_LongDistance);
 
@@ -132,4 +134,14 @@ void RADIO_Tick() {
 }
 
 
+int RADIO_get_rssi(uint8_t raw_rssi) {
+    // Umwandlung des Roh-RSSI-Werts in dBm
+    int rssi_dbm;
+    if (raw_rssi >= 128) {
+        rssi_dbm = ((int)(raw_rssi - 256) / 2) - 74;
+    } else {
+        rssi_dbm = ((int)raw_rssi / 2) - 74;
+    }
 
+    return rssi_dbm;
+}
