@@ -79,6 +79,41 @@ extern "C" {
 #define DOUBLE_TAP_EN               (0x1 << 13)
 #define TRIPPLE_TAP_EN              (0x1 << 14)
 
+// Config Value Defines
+#define ACC_ODR_25                  (uint16_t)(0b0110 << 0)
+#define ACC_ODR_50                  (uint16_t)(0b0111 << 0)
+#define ACC_ODR_100                 (uint16_t)(0b1000 << 0)
+#define ACC_ODR_200                 (uint16_t)(0b1001 << 0)
+#define ACC_ODR_400                 (uint16_t)(0b1010 << 0)
+#define ACC_ODR_800                 (uint16_t)(0b1011 << 0)
+
+#define ACC_RANGE_2G                (uint16_t)(0b000 << 4)
+#define ACC_RANGE_4G                (uint16_t)(0b001 << 4)
+#define ACC_RANGE_8G                (uint16_t)(0b010 << 4)
+#define ACC_RANGE_16G               (uint16_t)(0b011 << 4)
+
+#define ACC_BW_ODR2                 (uint16_t)(0b1 << 7)
+#define ACC_BW_ODR4                 (uint16_t)(0b1 << 7)
+
+#define GYR_ODR_25                  (uint16_t)(0b0110 << 0)
+#define GYR_ODR_50                  (uint16_t)(0b0111 << 0)
+#define GYR_ODR_100                 (uint16_t)(0b1000 << 0)
+#define GYR_ODR_200                 (uint16_t)(0b1001 << 0)
+#define GYR_ODR_400                 (uint16_t)(0b1010 << 0)
+#define GYR_ODR_800                 (uint16_t)(0b1011 << 0)
+
+#define GYR_RANGE_125               (uint16_t)(0b000 << 4)
+#define GYR_RANGE_250               (uint16_t)(0b001 << 4)
+#define GYR_RANGE_500               (uint16_t)(0b010 << 4)
+#define GYR_RANGE_1000              (uint16_t)(0b011 << 4)
+#define GYR_RANGE_2000              (uint16_t)(0b100 << 4)
+
+#define GYR_BW_ODR2                 (uint16_t)(0b0 << 7)
+#define GYR_BW_ODR4                 (uint16_t)(0b1 << 7)
+
+
+
+
 // Functions
 void BMI_set_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length);
 void BMI_get_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length);
