@@ -100,8 +100,6 @@ void IMU_init(){
     gpio_set_function(IMU_SPI_MISO, GPIO_FUNC_SPI);
     //gpio_set_function(IMU_SPI_CS, GPIO_FUNC_SPI);
 
-    //spi_set_format(IMU_SPI_PORT, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
-
     gpio_init(IMU_SPI_CS);
     gpio_set_dir(IMU_SPI_CS, GPIO_OUT);
     gpio_put(IMU_SPI_CS, 0);
@@ -112,15 +110,17 @@ void IMU_init(){
     // Initialize the INT pins
     gpio_init(IMU_INT1);
     gpio_set_dir(IMU_INT1, GPIO_IN);
-    gpio_pull_up(IMU_INT1);
+    //gpio_pull_up(IMU_INT1);
 
     gpio_init(IMU_INT2);
     gpio_set_dir(IMU_INT2, GPIO_IN);
-    gpio_pull_up(IMU_INT2);
+    //gpio_pull_up(IMU_INT2);
 
 
     // Initialize the IMU
-    sleep_ms(350);
+    sleep_ms(150);
+    BMI323_soft_reset();
+    sleep_ms(150);
 
     // Dummy write/read to wake up the IMU
     spi_write_blocking(IMU_SPI_PORT, &addr, 1);
@@ -196,22 +196,34 @@ void IMU_init(){
     // BMI_get_reg(BMI323_ACC_X, data_in, 3);
 
     // Enable the accelerometer
-    uint16_t acc_conf = 0x0028; // Default value
+    uint16_t acc_conf = 0x0000; // Default value
     acc_conf |= (0b100 << 12);  // Normal mode
-    acc_conf |= (0b1001 << 0);  // 200 Hz
-    //acc_conf |= (0b1011 << 0);  // 800 Hz
-    //acc_conf |= (0b001 << 8);   // Average 2 samples
+    acc_conf |= (0b010 << 8);   // Averageing 4 samples
+    acc_conf |= (0b0 << 7);     // Cut-off acc_odr/2 
+    acc_conf |= (0b001 << 4);   // 4G range
+    acc_conf |= (0b1001 << 0);  // acc_odr 200 Hz
+    printf("Set ACC_CONF: 0x%04X\n", acc_conf);
     BMI_set_reg(BMI323_ACC_CONF, &acc_conf, 1);
     BMI_get_reg(BMI323_ACC_X, data_in, 3);
 
+    sleep_ms(10);
+    BMI_get_reg(BMI323_ACC_CONF, &config, 1);
+    printf("ACC_CONF: 0x%04X\n", config);
+
     // Enable the gyroscope
-    uint16_t gyr_conf = 0x0048; // Default value 
+    uint16_t gyr_conf = 0x0000; // Default value
     gyr_conf |= (0b100 << 12);  // Normal mode
-    gyr_conf |= (0b1001 << 0);  // 200 Hz
-    //gyr_conf |= (0b1011 << 0);  // 800 Hz
-    //gyr_conf |= (0b001 << 8);   // Average 2 samples
+    gyr_conf |= (0b000 << 8);   // Averageing off
+    gyr_conf |= (0b0 << 7);     // Cut-off gyr_odr/2 
+    gyr_conf |= (0b100 << 4);   // 2kdps
+    gyr_conf |= (0b1001 << 0);  // gyr_odr 200 Hz
+    printf("Set GYR_CONF: 0x%04X\n", gyr_conf);
     BMI_set_reg(BMI323_GYR_CONF, &gyr_conf, 1);
     BMI_get_reg(BMI323_GYR_X, data_in, 3);
+
+    sleep_ms(10);
+    BMI_get_reg(BMI323_GYR_CONF, &config, 1);
+    printf("GYR_CONF: 0x%04X\n", config);
 
     
     //
@@ -219,10 +231,10 @@ void IMU_init(){
     //
 
     // Configure Tab detection
-    uint16_t fAddr = (uint16_t)FEATURE_TAP_1;
-    config = 0x0074;    // Set x axis
-    BMI_set_reg(BMI323_FEATURE_DATA_ADDR, &fAddr, 1);
-    BMI_set_reg(BMI323_FEATURE_DATA_TX, &config, 1);
+    // uint16_t fAddr = (uint16_t)FEATURE_TAP_1;
+    // config = 0x0074;    // Set x axis
+    // BMI_set_reg(BMI323_FEATURE_DATA_ADDR, &fAddr, 1);
+    // BMI_set_reg(BMI323_FEATURE_DATA_TX, &config, 1);
 
     sleep_ms(10);
 
@@ -230,29 +242,50 @@ void IMU_init(){
     config |= SINGLE_TAP_EN;    // Enable single tap detection
     config |= DOUBLE_TAP_EN;    // Enable double tap detection
     config |= TRIPPLE_TAP_EN;   // Enable tripple tap detection
+    printf("Set FEATURE_IO0: 0x%04X\n", config);
     BMI_set_reg(BMI323_FEATURE_IO0, &config, 1);
 
+    config = 0x0001;
+    BMI_set_reg(BMI323_FEATURE_IO_STATUS, &config, 1);
+
+
+    sleep_ms(10);
+    BMI_get_reg(BMI323_FEATURE_IO0, &config, 1);
+    printf("FEATURE_IO0: 0x%04X\n", config);
+    
 
     //
     // Configure the BMI interrupts
     //
     config = 0x0404;    // Enable Interrupt pins 1 and 2 
-    config |= 0x0202;   // Enable open drain
+    //config |= 0x0202;   // Enable open drain
+    config |= 0x0101;   // Active high
     BMI_set_reg(BMI323_IO_INT_CTRL, &config, 1);
 
     BMI_get_reg(BMI323_INT_MAP2, &config, 1);
     config = (config & (~0b11)) | (0b01 << 0); // Map tap detection to INT1
     BMI_set_reg(BMI323_INT_MAP2, &config, 1);
 
+    BMI_get_reg(BMI323_IO_INT_CTRL, &config, 1);
+    printf("IO_INT_CTRL: 0x%04X\n", config);
+    
+    BMI_get_reg(BMI323_INT_MAP2, &config, 1);
+    printf("INT_MAP2: 0x%04X\n", config);
+
+
+
+
 
     // Set up the interrupt
-    gpio_set_irq_enabled_with_callback(IMU_INT1, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &IMU_INT_irq);
-    gpio_set_irq_enabled_with_callback(IMU_INT2, GPIO_IRQ_EDGE_FALL | GPIO_IRQ_EDGE_RISE, true, &IMU_INT_irq);
+    gpio_set_irq_enabled_with_callback(IMU_INT1, GPIO_IRQ_EDGE_RISE, true, &IMU_INT_irq);
+    gpio_set_irq_enabled_with_callback(IMU_INT2, GPIO_IRQ_EDGE_RISE, true, &IMU_INT_irq);
     
     //return data_in[0] & 0x01;
 }
 
 void IMU_Tick(){
+    int16_t acc_data[3];
+    static int16_t prev_acc_data[3];
     uint16_t reg_data[16];
     uint16_t data;
 
@@ -265,25 +298,19 @@ void IMU_Tick(){
         IMU_INT2_handle();
     }
 
-    // // Read accelerometer data
-    // BMI_get_reg(BMI323_ACC_X, reg_data, 3);
-    // printf("Acc X: %d, Y: %d, Z: %d\n", (int16_t)reg_data[0], (int16_t)reg_data[1], (int16_t)reg_data[2]);
 
-    // // Read gyroscope data
-    // BMI_get_reg(BMI323_GYR_X, reg_data, 3);
-    // printf("Gyr X: %d, Y: %d, Z: %d\n", (int16_t)reg_data[0], (int16_t)reg_data[1], (int16_t)reg_data[2]);
+    BMI_get_reg(BMI323_FEATURE_IO1, &data, 1);
+    if(data & 0x0f == 0){
+        printf("Feature engine not ready\n");
+    }
 
-    // // Read temperature
-    // BMI_get_reg(BMI323_TEMP, reg_data, 1);
-    // float temperature_value = (float)((((float)((int16_t)reg_data[0])) / 512.0) + 23.0);
-    // printf("Temperature: %.2f C\n", temperature_value);
-
-    //BMI_get_reg(BMI323_FEATURE_IO1, &data, 1);
-    //printf("TICK: IMU IO1: 0x%04X\n", data);
+    // Read the accelerometer data
+    //BMI_get_reg(BMI323_ACC_X, reg_data, 6);
+    //printf("ACC: %d, %d, %d\n", (int16_t)reg_data[0], (int16_t)reg_data[1], (int16_t)reg_data[2]);
+    //printf("GYR: %d, %d, %d\n", (int16_t)reg_data[3], (int16_t)reg_data[4], (int16_t)reg_data[5]);
 
     BMI_get_reg(BMI323_INT_STATUS_INT1, &data, 1);
-    //printf("TICK: IMU INT1: 0x%04X\n", data);
-
+    
     // Check for tap detection
     if(data & (0x1 << 8)){
         printf("TICK: Tap detected\n");
@@ -317,24 +344,25 @@ void BMI_set_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length){
         spi_write_blocking(IMU_SPI_PORT, &data_out, 1);
         data_out = reg_data[i] >> 8; // Upper byte
         spi_write_blocking(IMU_SPI_PORT, &data_out, 1);
-        //spi_write16_blocking(IMU_SPI_PORT, &reg_data[i], 1);
     }
 
     BMI323_Deselect();
 }
 
 void BMI_get_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length){
-    uint16_t buf;
     uint8_t addr = reg_addr | 0x80;
     uint8_t dummy;
+    uint8_t data = 0;
     BMI323_Select();
 
     spi_write_blocking(IMU_SPI_PORT, &addr, 1);
     spi_read_blocking(IMU_SPI_PORT, 0, &dummy, 1);  // Dummy read
     for(int i = 0; i < length; i++){
-        spi_read16_blocking(IMU_SPI_PORT, 0, &buf, 1);
-        reg_data[i] = buf & 0xFF;
-        reg_data[i] |= buf << 8;
+        //spi_read16_blocking(IMU_SPI_PORT, 0, &reg_data[i], 1);
+        spi_read_blocking(IMU_SPI_PORT, 0, &data, 1);
+        reg_data[i] = 0x00ff & data;
+        spi_read_blocking(IMU_SPI_PORT, 0, &data, 1);
+        reg_data[i] |= (data << 8) & 0xff00;
     }
 
     BMI323_Deselect();
@@ -343,11 +371,12 @@ void BMI_get_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length){
 void BMI323_Select()
 {
   gpio_put(IMU_SPI_CS, 0);
-  sleep_us(10);
+  sleep_us(6);
 }
 
 void BMI323_Deselect()
 {
+  sleep_us(6);
   gpio_put(IMU_SPI_CS, 1);
 }
 
