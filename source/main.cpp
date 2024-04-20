@@ -20,6 +20,7 @@
 #include "frackstock.h"
 #include "led_ring.h"
 #include "radio.h"
+#include "imu.h"
 #include "serial.h"
 
 #define SENDER
@@ -47,16 +48,19 @@ int main() {
     gpio_init(BUILTIN_LED_PIN);
     gpio_set_dir(BUILTIN_LED_PIN, GPIO_OUT);
 
+    // Initialize fractstock data
+    FRACK_init();
+
+    // Initialize IMU
+    IMU_init();
+
+    // Initialize the radio
+    RADIO_init();
+
     // Initialize the LED Ring
     if(LED_Ring_init()) {
         printf("LED Ring init failed\n");
     }
-
-    // Initialize fractstock data
-    FRACK_init();
-
-    // Initialize the radio
-    RADIO_init();
 
     printf("Init done\n");
     sleep_ms(500);
@@ -77,7 +81,7 @@ int main() {
         
         #ifdef SENDER
         // Send some data
-        if(cnt % 2000 == 100){
+        if(cnt % 1500 == 100){
             RADIO_send();
             activeLED_MODE = LED_MODE_BLINK;
             activeSEG_MODE = SEG_MODE_CUSTOM;
@@ -85,7 +89,7 @@ int main() {
         }
         #endif
 
-        if(cnt % 500 == 0){
+        if(cnt % 500 == 400){
             activeLED_MODE = LED_MODE_OFF;
             activeSEG_MODE = SEG_MODE_CUSTOM;
             SEG_write_number_hex(0xff);
@@ -101,6 +105,11 @@ int main() {
         if(cnt % 2 == 0)
         {
             LED_Ring_Tick();
+        }
+
+        if(cnt % 100 == 0)
+        {
+            IMU_Tick();
         }
         
         if(cnt % 4 == 0)

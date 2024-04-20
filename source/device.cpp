@@ -74,10 +74,6 @@ int DEV_init() {
     }
     printf("\n");
 
-    sleep_ms(1000);
-
-    printf("Read target region first:\n");
-    print_buf(flash_target_contents, 32);
 
     if(flash_target_contents[IDX_VERSION] == (VERSION_MAJOR << 4 | VERSION_MINOR)) {
         printf("Version match!\n");

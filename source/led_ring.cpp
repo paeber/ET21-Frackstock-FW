@@ -277,16 +277,16 @@ int PCA9552_init(){
     uint8_t data[5];
     int ret;
 
-    SEG_clear();
+    // SEG_clear();
 
-    for(int i=0; i<8; i++){
-        SEG_set_segments(LEFT_DIGIT, SEG_A << i);
-        sleep_ms(100);
-    }
-    for(int i=0; i<8; i++){
-        SEG_set_segments(RIGHT_DIGIT, SEG_A << i);
-        sleep_ms(100);
-    }
+    // for(int i=0; i<8; i++){
+    //     SEG_set_segments(LEFT_DIGIT, SEG_A << i);
+    //     sleep_ms(100);
+    // }
+    // for(int i=0; i<8; i++){
+    //     SEG_set_segments(RIGHT_DIGIT, SEG_A << i);
+    //     sleep_ms(100);
+    // }
 
     SEG_clear();
     SEG_write_number_hex((uint8_t)(VERSION_MAJOR << 4 | VERSION_MINOR));
