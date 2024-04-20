@@ -28,6 +28,7 @@ add_executable(Frackstock
     source/radio.cpp
     source/cc1101.cpp
     source/imu.cpp
+    source/serial.cpp
 )
 
 pico_set_program_name(Frackstock "Frackstock")
@@ -40,6 +41,7 @@ target_link_libraries(
     hardware_flash
     hardware_i2c 
     hardware_spi
+    hardware_uart
     PicoLed
 )
 

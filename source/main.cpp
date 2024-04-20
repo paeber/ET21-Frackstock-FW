@@ -21,6 +21,7 @@
 #include "led_ring.h"
 #include "radio.h"
 #include "imu.h"
+#include "serial.h"
 
 #define SENDER
 
@@ -31,7 +32,7 @@ int main() {
     uint16_t cnt = 0;
 
     // Enable UART over USB
-    stdio_init_all();
+    SERIAL_init();
 
     sleep_ms(1000);
 
@@ -121,6 +122,9 @@ int main() {
         {
             DEV_LED_toggle();
         }
+        
+
+        SERIAL_Tick();
         
 
         cnt++;
