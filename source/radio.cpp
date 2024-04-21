@@ -36,7 +36,7 @@ int RADIO_get_rssi(uint8_t raw_rssi);
 // Interrupt functions
 void messageReceived(uint gpio, uint32_t events) {
     packetWaiting = true;
-    activeLED_MODE = LED_MODE_BLINK;
+    LED_Ring_set_mode(LED_MODE_BLINK);
 }
 
 // Function definitions
@@ -62,8 +62,8 @@ void handleMessage(){
         }
         printf("\n");
 
-        activeSEG_MODE = SEG_MODE_CUSTOM;
-        activeLED_MODE = LED_MODE_WALK;
+        SEG_set_mode(SEG_MODE_CUSTOM);
+        LED_Ring_set_mode(LED_MODE_WALK);
 
         rxFrom_id = packet.data[0];
         SEG_write_number_hex(rxFrom_id);  

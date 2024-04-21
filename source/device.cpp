@@ -115,11 +115,10 @@ int DEV_init() {
             if (write_data[i] != flash_target_contents[i])
                 mismatch = true;
         }
-        if (mismatch)
+        if (mismatch){
             printf("Programming failed!\n");
-        else
-            printf("Programming successful!\n");
-
+            return 1;
+        }
     } 
 
     return 0;

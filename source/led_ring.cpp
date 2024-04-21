@@ -28,6 +28,7 @@
 
 // Segment display
 #define SEG_I2C_PORT    i2c1
+#define SEG_I2C_FREQ    (100 * 1000)
 #define SEG_SDA_PIN     26
 #define SEG_SCL_PIN     27
 
@@ -51,7 +52,11 @@
 
 eSEG_MODE activeSEG_MODE = SEG_MODE_OFF;
 eLED_MODE activeLED_MODE = LED_MODE_OFF;
+PicoLed::Color ledColor = PicoLed::RGB(209, 134, 0);
 PicoLed::PicoLedController ledStrip = PicoLed::addLeds<PicoLed::WS2812B>(pio0, 0, LED_RING_PIN, LED_RING_COUNT, PicoLed::FORMAT_GRB);
+
+uint16_t led_off_delay_cnt = LED_DEFAULT_ON_TIME;
+uint16_t seg_off_delay_cnt = SEG_DEFAULT_ON_TIME;
 
 const uint8_t seg_order_digit[2][8] = {
     {1, 0, 6, 5, 4, 2, 3, 7},
@@ -312,7 +317,7 @@ int LED_Ring_init(){
     ledStrip.show();
 
     // Initialize the I2C bus
-    i2c_init(SEG_I2C_PORT, 100 * 1000);
+    i2c_init(SEG_I2C_PORT, SEG_I2C_FREQ);
     gpio_set_function(SEG_SDA_PIN, GPIO_FUNC_I2C);
     gpio_set_function(SEG_SCL_PIN, GPIO_FUNC_I2C);
 
@@ -325,12 +330,24 @@ int LED_Ring_init(){
 
 void LED_Ring_set_mode(eLED_MODE mode){
     activeLED_MODE = mode;
+    led_off_delay_cnt = LED_DEFAULT_ON_TIME;
+}
+
+
+void SEG_set_mode(eSEG_MODE mode){
+    activeSEG_MODE = mode;
+    seg_off_delay_cnt = SEG_DEFAULT_ON_TIME;
 }
 
 
 void LED_Ring_Tick(){
     static uint8_t tick = 0;
 
+    if(led_off_delay_cnt > 0){
+        led_off_delay_cnt--;
+    } else {
+        activeLED_MODE = LED_MODE_OFF;
+    }
 
     switch(activeLED_MODE){
         case LED_MODE_CUSTOM:
@@ -341,12 +358,12 @@ void LED_Ring_Tick(){
             break;
 
         case LED_MODE_ON:
-            ledStrip.fill( PicoLed::RGB(0, 255, 255) );
+            ledStrip.fill( ledColor );
             break;
 
         case LED_MODE_BLINK:
             if(tick % 4 < 2){
-                ledStrip.fill( PicoLed::RGB(0, 255, 255) );
+                ledStrip.fill( ledColor );
             } else {
                 ledStrip.fill( PicoLed::RGB(0, 0, 0) );
             }
@@ -358,13 +375,16 @@ void LED_Ring_Tick(){
 
         case LED_MODE_WALK:
             ledStrip.fill( PicoLed::RGB(0, 0, 0) );
-            ledStrip.setPixelColor(tick % LED_RING_COUNT, PicoLed::RGB(255, 255, 255));
+            ledStrip.setPixelColor(tick % LED_RING_COUNT, ledColor);
             break;
 
         case LED_MODE_RAINBOW:
             ledStrip.fillRainbow(tick, 255 / LED_RING_COUNT);
             break;
         
+        case LED_MODE_FILL_CIRCLE:
+            ledStrip.setPixelColor((tick / 4) % LED_RING_COUNT, ledColor);
+            break;
     }
 
     ledStrip.show();
@@ -374,6 +394,12 @@ void LED_Ring_Tick(){
 
 void SEG_Tick(){
     static uint16_t number = 0;
+
+    if(seg_off_delay_cnt > 0){
+        seg_off_delay_cnt--;
+    } else {
+        activeSEG_MODE = SEG_MODE_OFF;
+    }
 
     switch (activeSEG_MODE)
     {

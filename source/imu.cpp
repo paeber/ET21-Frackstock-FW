@@ -78,13 +78,13 @@ void IMU_INT1_handle(){
 
         if(data & SINGLE_TAP_DETECT){
             printf("Single tap detected\n");
-            activeLED_MODE = LED_MODE_RAINBOW;
+            LED_Ring_set_mode(LED_MODE_RAINBOW);
         } else if(data & DOUBLE_TAP_DETECT){
             printf("Double tap detected\n");
-            activeLED_MODE = LED_MODE_FADE;
+            LED_Ring_set_mode(LED_MODE_FADE);
         } else if(data & TRIPPLE_TAP_DETECT){
             printf("Tripple tap detected\n");
-            activeLED_MODE = LED_MODE_ON;
+            LED_Ring_set_mode(LED_MODE_ON);
         } else {
             printf("Unknown detected: 0x%04X\n", data);
         }
@@ -340,13 +340,13 @@ void IMU_Tick(){
         BMI_get_reg(BMI323_FEATURE_EVENT_EXT, &data, 1);
         if(data & SINGLE_TAP_DETECT){
             printf("TICK: Single tap detected\n");
-            activeLED_MODE = LED_MODE_RAINBOW;
+            LED_Ring_set_mode(LED_MODE_RAINBOW);
         } else if(data & DOUBLE_TAP_DETECT){
             printf("TICK: Double tap detected\n");
-            activeLED_MODE = LED_MODE_FADE;
+            LED_Ring_set_mode(LED_MODE_FADE);
         } else if(data & TRIPPLE_TAP_DETECT){
             printf("TICK: Tripple tap detected\n");
-            activeLED_MODE = LED_MODE_ON;
+            LED_Ring_set_mode(LED_MODE_ON);
         } else {
             printf("TICK: Unknown detected: 0x%04X\n", data);
         }

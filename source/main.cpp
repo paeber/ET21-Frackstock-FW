@@ -23,7 +23,7 @@
 #include "imu.h"
 #include "serial.h"
 
-#define SENDER
+
 
 int main() {
     int ret;
@@ -33,8 +33,6 @@ int main() {
 
     // Enable UART over USB
     SERIAL_init();
-
-    sleep_ms(1000);
 
     // Print the version
     printf("Frackstock v%d.%d\n", VERSION_MAJOR, VERSION_MINOR);
@@ -63,37 +61,17 @@ int main() {
     }
 
     printf("Init done\n");
-    sleep_ms(500);
 
     while (1) {
-
-        // Set new mode segemnts
-        /*if(cnt % 500 == 0){
-            activeSEG_MODE = (eSEG_MODE)((activeSEG_MODE + 1) % 5);
-        }*/
         
-
-        // Set new mode LED Ring
-        if(cnt % 1000 == 100){
-            //activeLED_MODE = (eLED_MODE)((activeLED_MODE + 1) % 7);
-            //activeLED_MODE = LED_MODE_RAINBOW;
-        }
-        
-        #ifdef SENDER
         // Send some data
         if(cnt % 1500 == 100){
             RADIO_send();
-            activeLED_MODE = LED_MODE_BLINK;
-            activeSEG_MODE = SEG_MODE_CUSTOM;
+            LED_Ring_set_mode(LED_MODE_FILL_CIRCLE);
+            SEG_set_mode(SEG_MODE_CUSTOM);
             SEG_write_number_hex(0xAA);
         }
-        #endif
 
-        if(cnt % 500 == 400){
-            activeLED_MODE = LED_MODE_OFF;
-            activeSEG_MODE = SEG_MODE_CUSTOM;
-            SEG_write_number_hex(0xff);
-        }
 
 
         // Tasks
@@ -102,12 +80,12 @@ int main() {
             RADIO_Tick();
         }
 
-        if(cnt % 2 == 0)
+        if(cnt % 4 == 0)
         {
             LED_Ring_Tick();
         }
 
-        if(cnt % 100 == 0)
+        if(cnt % 50 == 0)
         {
             IMU_Tick();
         }

@@ -33,6 +33,9 @@
 #define SEG_G   0x40
 #define SEG_DP  0x80
 
+#define LED_DEFAULT_ON_TIME     100
+#define SEG_DEFAULT_ON_TIME     100
+
 // Data structures
 enum eLED_MODE {
     LED_MODE_OFF = 0,
@@ -42,6 +45,7 @@ enum eLED_MODE {
     LED_MODE_FADE,
     LED_MODE_WALK,
     LED_MODE_RAINBOW,
+    LED_MODE_FILL_CIRCLE
 };
 
 enum eSEG_MODE {
@@ -62,6 +66,7 @@ int LED_Ring_init();
 void LED_Ring_Tick();
 
 void LED_Ring_set_mode(eLED_MODE mode);
+void SEG_set_mode(eSEG_MODE mode);
 
 void SEG_Tick();
 
