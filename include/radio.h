@@ -25,6 +25,17 @@
 
 #define RADIO_CHANNEL       0x00
 
+#define BROADCAST_ADDRESS   0xFF
+#define RADIO_TTL           2
+
+#define PACKET_IDX_OWNER        0
+#define PACKET_IDX_TARGET       1
+#define PACKET_IDX_TTL          2
+#define PACKET_IDX_REPEATER_1   3
+#define PACKET_IDX_REPEATER_2   4
+#define PACKET_IDX_BEER         5
+
+
 
 // Function prototypes
 void RADIO_init();

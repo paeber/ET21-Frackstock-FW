@@ -32,6 +32,7 @@ bool new_message = false;
 void messageReceived(uint gpio, uint32_t events);
 void handleMessage();
 int RADIO_get_rssi(uint8_t raw_rssi);
+void RADIO_repeat(uint8_t *data, uint8_t length);
 
 // Interrupt functions
 void messageReceived(uint gpio, uint32_t events) {
@@ -65,8 +66,16 @@ void handleMessage(){
         SEG_set_mode(SEG_MODE_CUSTOM);
         LED_Ring_set_mode(LED_MODE_WALK);
 
-        rxFrom_id = packet.data[0];
+        rxFrom_id = packet.data[PACKET_IDX_OWNER];
         SEG_write_number_hex(rxFrom_id);  
+
+        // Check if packet needs to be repeated
+        if(packet.data[PACKET_IDX_TTL] > 0) {
+            if(packet.data[PACKET_IDX_REPEATER_1] != frackstock.id && packet.data[PACKET_IDX_REPEATER_2] != frackstock.id){
+                RADIO_repeat(packet.data, packet.length);
+            }
+        }
+    
     }
   }
   gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
@@ -113,12 +122,35 @@ void RADIO_send() {
 
     gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
 
-    packet.length = 4;
-    packet.data[0] = frackstock.id;
-    packet.data[1] = frackstock.beer;
-    packet.data[2] = 0xa2;
-    packet.data[3] = 0xc3;
+    packet.length = 10;
+    packet.data[PACKET_IDX_OWNER] = frackstock.id;
+    packet.data[PACKET_IDX_TARGET] = BROADCAST_ADDRESS;
+    packet.data[PACKET_IDX_TTL] = RADIO_TTL;
+    packet.data[PACKET_IDX_REPEATER_1] = 0;
+    packet.data[PACKET_IDX_REPEATER_2] = 0;
+    packet.data[PACKET_IDX_BEER] = frackstock.beer;
 
+    radio.sendData(packet);
+
+    gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
+}
+
+
+void RADIO_repeat(uint8_t *data, uint8_t length) {
+    CCPACKET packet;
+
+    gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
+
+    packet.length = length;
+    memcpy(packet.data, data, length);
+
+    if(packet.data[PACKET_IDX_REPEATER_1] == 0) {
+        packet.data[PACKET_IDX_REPEATER_1] = frackstock.id;
+    } else if (packet.data[PACKET_IDX_REPEATER_2] == 0) {
+        packet.data[PACKET_IDX_REPEATER_2] = frackstock.id;
+    }
+
+    data[PACKET_IDX_TTL]--;
     radio.sendData(packet);
 
     gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
