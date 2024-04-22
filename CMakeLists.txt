@@ -32,7 +32,7 @@ add_executable(Frackstock
 )
 
 pico_set_program_name(Frackstock "Frackstock")
-pico_set_program_version(Frackstock "0.4")
+pico_set_program_version(Frackstock "0.6")
 
 # Add pico_stdlib library which aggregates commonly used features
 target_link_libraries(
@@ -42,6 +42,7 @@ target_link_libraries(
     hardware_i2c 
     hardware_spi
     hardware_uart
+    hardware_watchdog
     PicoLed
 )
 

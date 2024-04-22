@@ -15,6 +15,7 @@
 
 #include "hardware/gpio.h"
 #include "hardware/i2c.h"
+#include "hardware/watchdog.h"
 
 #include "device.h"
 #include "frackstock.h"
@@ -33,6 +34,12 @@ int main() {
 
     // Enable UART over USB
     SERIAL_init();
+
+    if (watchdog_caused_reboot()) {
+        printf("Rebooted by Watchdog!\n");
+    } else {
+        printf("Clean boot\n");
+    }
 
     // Print the version
     printf("Frackstock v%d.%d\n", VERSION_MAJOR, VERSION_MINOR);
@@ -56,11 +63,14 @@ int main() {
     RADIO_init();
 
     // Initialize the LED Ring
-    if(LED_Ring_init()) {
+    if(LED_Ring_init() != 0) {
         printf("LED Ring init failed\n");
     }
 
     printf("Init done\n");
+
+    // Enable the watchdog, requiring the watchdog to be updated every 1000ms or the chip will reboot
+    watchdog_enable(1000, 1);
 
     while (1) {
         
@@ -85,7 +95,7 @@ int main() {
             LED_Ring_Tick();
         }
 
-        if(cnt % 50 == 0)
+        if(cnt % 10 == 0)
         {
             IMU_Tick();
         }
@@ -106,9 +116,9 @@ int main() {
         
 
         cnt++;
-
         last_time = delayed_by_ms(last_time, 10); // Sleep up to 10ms
         sleep_until(last_time);
+        watchdog_update();
 
     }
 

@@ -17,9 +17,12 @@
 #define IDX_BEER                10
 #define IDX_ABREV               11
 #define LEN_ABREV               8
+#define IDX_COLOR               19
+#define LEN_COLOR               3
 
 // Function prototypes
 int DEV_init();
+void DEV_reset_mcu();
 void DEV_LED_toggle();
 void DEV_get_frack_data(tFrackStock *frackstock);
 void DEV_set_frack_data(tFrackStock *frackstock);

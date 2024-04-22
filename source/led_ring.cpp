@@ -27,6 +27,7 @@
 #define LED_RING_BRIGHTNESS 64
 
 // Segment display
+#define I2C_TIMEOUT     1000
 #define SEG_I2C_PORT    i2c1
 #define SEG_I2C_FREQ    (100 * 1000)
 #define SEG_SDA_PIN     26
@@ -57,6 +58,7 @@ PicoLed::PicoLedController ledStrip = PicoLed::addLeds<PicoLed::WS2812B>(pio0, 0
 
 uint16_t led_off_delay_cnt = LED_DEFAULT_ON_TIME;
 uint16_t seg_off_delay_cnt = SEG_DEFAULT_ON_TIME;
+bool LED_Ring_initialized = false;
 
 const uint8_t seg_order_digit[2][8] = {
     {1, 0, 6, 5, 4, 2, 3, 7},
@@ -123,7 +125,7 @@ void SEG_write_number(uint8_t number){
     data[3] = digit_1_out & 0xFF;
     data[4] = digit_1_out >> 8;
 
-    ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, data, 5, false);
+    ret = i2c_write_timeout_us(SEG_I2C_PORT, PCA_ADDR, data, 5, false, I2C_TIMEOUT);
 }
 
 
@@ -166,7 +168,7 @@ void SEG_write_number_hex(uint8_t number){
     data[3] = digit_1_out & 0xFF;
     data[4] = digit_1_out >> 8;
 
-    ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, data, 5, false);
+    ret = i2c_write_timeout_us(SEG_I2C_PORT, PCA_ADDR, data, 5, false, I2C_TIMEOUT);
 }
 
 
@@ -191,7 +193,11 @@ void SEG_add_dot(uint8_t digit){
         data[2] &= ~(0x3 << 6);
     }
 
-    ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, data, 5, false);
+    ret = i2c_write_timeout_us(SEG_I2C_PORT, PCA_ADDR, data, 5, false, I2C_TIMEOUT);
+    if (ret == PICO_ERROR_GENERIC || ret == PICO_ERROR_TIMEOUT) {
+        printf("Error: %d\n", ret);
+        LED_Ring_initialized = false;
+    }
 }
 
 
@@ -223,14 +229,14 @@ void SEG_set_segments(uint8_t digit, uint8_t segments){
     data[1] = digit_out & 0xFF;
     data[2] = digit_out >> 8;
 
-    ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, data, 3, false);
+    ret = i2c_write_timeout_us(SEG_I2C_PORT, PCA_ADDR, data, 3, false, I2C_TIMEOUT);
 }
 
 
 /**
  * Clears the Segments by sending a command to the PCA9685 LED driver.
  */
-void SEG_clear(){
+int SEG_clear(){
     uint8_t data[5];
     int ret;
 
@@ -240,7 +246,8 @@ void SEG_clear(){
     data[3] = 0x55;
     data[4] = 0x55;
 
-    ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, data, 5, false);
+    ret = i2c_write_timeout_us(SEG_I2C_PORT, PCA_ADDR, data, 5, false, I2C_TIMEOUT);
+    return ret;
 }
 
 
@@ -256,13 +263,13 @@ uint8_t PCA9552_read_reg(uint8_t reg){
     int ret;
     uint8_t buf[1];
 
-    ret = i2c_write_blocking(SEG_I2C_PORT, PCA_ADDR, &reg, 1, true);
+    ret = i2c_write_timeout_us(SEG_I2C_PORT, PCA_ADDR, &reg, 1, true, I2C_TIMEOUT);
     if(ret < 0){
-        return 0xfe;
+        return -1;
     }
-    ret = i2c_read_blocking(SEG_I2C_PORT, PCA_ADDR, buf, 1, false);
+    ret = i2c_read_timeout_us(SEG_I2C_PORT, PCA_ADDR, buf, 1, false, I2C_TIMEOUT);
     if(ret < 0){
-        return 0xfe;
+        return -1;
     }
 
     return buf[0];
@@ -293,11 +300,14 @@ int PCA9552_init(){
     //     sleep_ms(100);
     // }
 
-    SEG_clear();
+    ret = SEG_clear();
+    if (ret == PICO_ERROR_GENERIC || ret == PICO_ERROR_TIMEOUT) {
+        printf("Error: %d\n", ret);
+        LED_Ring_initialized = false;
+        return ret;
+    }
     SEG_write_number_hex((uint8_t)(VERSION_MAJOR << 4 | VERSION_MINOR));
     SEG_add_dot(LEFT_DIGIT);
-    
-    printf("PCA9552 init: %d\n", ret);
 
     return 0;
 }
@@ -311,11 +321,6 @@ int PCA9552_init(){
  * @return 0 if initialization is successful, otherwise an error code.
  */
 int LED_Ring_init(){
-    // Initialize the LED ring
-    ledStrip.setBrightness(LED_RING_BRIGHTNESS);
-    ledStrip.fill( PicoLed::RGB(0, 0, 0) );
-    ledStrip.show();
-
     // Initialize the I2C bus
     i2c_init(SEG_I2C_PORT, SEG_I2C_FREQ);
     gpio_set_function(SEG_SDA_PIN, GPIO_FUNC_I2C);
@@ -324,10 +329,32 @@ int LED_Ring_init(){
     // Initialize the PCA9552
     PCA9552_init();
 
+    // Initialize the LED ring
+    ledStrip.setBrightness(LED_RING_BRIGHTNESS);
+
     return 0;
 }
 
 
+/**
+ * Sets the default color of the LED ring.
+ *
+ * @param r The red component of the color (0-255).
+ * @param g The green component of the color (0-255).
+ * @param b The blue component of the color (0-255).
+ */
+void LED_Ring_set_color(uint8_t r, uint8_t g, uint8_t b){
+    ledColor = PicoLed::RGB(r, g, b);
+}
+
+
+/**
+ * Sets the mode of the LED ring.
+ *
+ * This function sets the mode of the LED ring to the specified mode.
+ *
+ * @param mode The mode to set for the LED ring.
+ */
 void LED_Ring_set_mode(eLED_MODE mode){
     activeLED_MODE = mode;
     led_off_delay_cnt = LED_DEFAULT_ON_TIME;
@@ -400,31 +427,41 @@ void SEG_Tick(){
     } else {
         activeSEG_MODE = SEG_MODE_OFF;
     }
+    
+    if(LED_Ring_initialized){
+        switch (activeSEG_MODE)
+        {
+            case SEG_MODE_OFF:
+                SEG_clear();
+                break;
+            
+            case SEG_MODE_ON:
+                SEG_write_number(number / 10);
+                break;
+            
+            case SEG_MODE_CUSTOM:
+                break;
 
-    switch (activeSEG_MODE)
-    {
-        case SEG_MODE_OFF:
-            SEG_clear();
-            break;
-        
-        case SEG_MODE_ON:
-            SEG_write_number(number / 10);
-            break;
-        
-        case SEG_MODE_CUSTOM:
-            break;
+            case SEG_MODE_BEER_DEC:
+                SEG_write_number(FRACK_get_beer());
+                break;
 
-        case SEG_MODE_BEER_DEC:
-            SEG_write_number(FRACK_get_beer());
-            break;
+            case SEG_MODE_BEER_HEX:
+                SEG_write_number_hex(FRACK_get_beer());
+                break;
 
-        case SEG_MODE_BEER_HEX:
-            SEG_write_number_hex(FRACK_get_beer());
-            break;
-
+        }
     }
     
     number++;
     number %= 1000;
+
+    if(LED_Ring_initialized == false){
+        LED_Ring_initialized = true;
+        if(number == 0){
+            PCA9552_init(); // Retry initialization
+        }
+        return;
+    }
 
 }
