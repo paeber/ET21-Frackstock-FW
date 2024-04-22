@@ -35,10 +35,20 @@ int RADIO_get_rssi(uint8_t raw_rssi);
 void RADIO_repeat(uint8_t *data, uint8_t length);
 
 // Interrupt functions
+/**
+ * @brief Callback function for handling received messages.
+ *
+ * This function is called when a message is received on a specific GPIO pin.
+ * It sets the `packetWaiting` flag to true and sets the LED ring mode to blink.
+ *
+ * @param gpio The GPIO pin number on which the message is received.
+ * @param events The events associated with the GPIO pin.
+ */
 void messageReceived(uint gpio, uint32_t events) {
     packetWaiting = true;
     LED_Ring_set_mode(LED_MODE_BLINK);
 }
+
 
 // Function definitions
 void handleMessage(){
@@ -48,7 +58,7 @@ void handleMessage(){
     printf("Received packet...\n");
     if (!packet.crc_ok)
     {
-        printf("crc not ok");
+        printf("crc not ok\n");
     }
     printf("lqi: %d, ", 0x3f - packet.lqi);
     printf("rssi: %d dBm\n", RADIO_get_rssi(packet.rssi));
@@ -83,6 +93,14 @@ void handleMessage(){
   gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
 }
 
+
+/**
+ * @brief Initializes the radio module.
+ * 
+ * This function initializes the SPI interface, configures SPI pins, configures GPIOs,
+ * initializes the radio, sets the sync word, carrier frequency, channel, address check,
+ * transmission power amplifier, and attaches an interrupt for message reception.
+ */
 void RADIO_init() {
     // Initialize the SPI interface
     spi_init(RADIO_SPI_PORT, RADIO_SPI_BAUDRATE);
@@ -119,12 +137,22 @@ void RADIO_init() {
 }
 
 
+/**
+ * Sends a radio packet.
+ * 
+ * This function prepares a radio packet with the necessary data and sends it using the radio module.
+ * It sets the packet length, owner ID, target address, time-to-live (TTL), repeater addresses, and beer value.
+ * After sending the packet, it enables the interrupt for receiving messages.
+ */
 void RADIO_send() {
     CCPACKET packet;
 
     gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
 
     packet.length = 10;
+    for(int i=0; i<packet.length; i++){
+        packet.data[i] = 0;
+    }
     packet.data[PACKET_IDX_OWNER] = frackstock.id;
     packet.data[PACKET_IDX_TARGET] = BROADCAST_ADDRESS;
     packet.data[PACKET_IDX_TTL] = RADIO_TTL;
@@ -138,13 +166,24 @@ void RADIO_send() {
 }
 
 
+/**
+ * Repeats a radio packet with modified data.
+ *
+ * This function takes a data packet and its length, modifies the packet by adding the ID of the current device as a repeater,
+ * decrements the TTL (Time To Live) value, and sends the modified packet using the radio module.
+ *
+ * @param data   Pointer to the data packet.
+ * @param length Length of the data packet.
+ */
 void RADIO_repeat(uint8_t *data, uint8_t length) {
     CCPACKET packet;
 
-    //gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
+    gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
 
     packet.length = length;
-    memcpy(packet.data, data, length);
+    for(int i=0; i<packet.length; i++){
+        packet.data[i] = data[i];
+    }
 
     if(packet.data[PACKET_IDX_REPEATER_1] == 0) {
         packet.data[PACKET_IDX_REPEATER_1] = frackstock.id;
@@ -159,6 +198,11 @@ void RADIO_repeat(uint8_t *data, uint8_t length) {
 }
 
 
+/**
+ * @brief This function is called periodically to handle incoming radio packets.
+ * 
+ * It checks if there is a packet waiting to be processed and calls the handleMessage() function to handle the packet.
+ */
 void RADIO_Tick() {
     if(packetWaiting) {
         packetWaiting = false;
@@ -168,8 +212,16 @@ void RADIO_Tick() {
 }
 
 
+/**
+ * @brief Converts the raw RSSI value to dBm.
+ *
+ * This function takes a raw RSSI value and converts it to dBm (decibel-milliwatts).
+ * The raw RSSI value is expected to be in the range of 0 to 255.
+ *
+ * @param raw_rssi The raw RSSI value to be converted.
+ * @return The RSSI value in dBm.
+ */
 int RADIO_get_rssi(uint8_t raw_rssi) {
-    // Umwandlung des Roh-RSSI-Werts in dBm
     int rssi_dbm;
     if (raw_rssi >= 128) {
         rssi_dbm = ((int)(raw_rssi - 256) / 2) - 74;
