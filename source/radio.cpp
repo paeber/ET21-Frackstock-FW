@@ -71,8 +71,10 @@ void handleMessage(){
 
         // Check if packet needs to be repeated
         if(packet.data[PACKET_IDX_TTL] > 0) {
-            if(packet.data[PACKET_IDX_REPEATER_1] != frackstock.id && packet.data[PACKET_IDX_REPEATER_2] != frackstock.id){
-                RADIO_repeat(packet.data, packet.length);
+            if(packet.data[PACKET_IDX_OWNER] != frackstock.id){
+                if(packet.data[PACKET_IDX_REPEATER_1] != frackstock.id && packet.data[PACKET_IDX_REPEATER_2] != frackstock.id){
+                    RADIO_repeat(packet.data, packet.length);
+                }
             }
         }
     
@@ -139,7 +141,7 @@ void RADIO_send() {
 void RADIO_repeat(uint8_t *data, uint8_t length) {
     CCPACKET packet;
 
-    gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
+    //gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
 
     packet.length = length;
     memcpy(packet.data, data, length);
@@ -153,7 +155,7 @@ void RADIO_repeat(uint8_t *data, uint8_t length) {
     data[PACKET_IDX_TTL]--;
     radio.sendData(packet);
 
-    gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
+    //gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
 }
 
 

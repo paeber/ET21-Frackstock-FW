@@ -56,7 +56,7 @@ int main() {
     RADIO_init();
 
     // Initialize the LED Ring
-    if(LED_Ring_init()) {
+    if(LED_Ring_init() != 0) {
         printf("LED Ring init failed\n");
     }
 
@@ -85,7 +85,7 @@ int main() {
             LED_Ring_Tick();
         }
 
-        if(cnt % 50 == 0)
+        if(cnt % 10 == 0)
         {
             IMU_Tick();
         }
