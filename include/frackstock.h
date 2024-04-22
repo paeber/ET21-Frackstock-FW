@@ -18,6 +18,7 @@
 typedef struct {
     uint8_t id;         ///< ID of the Frackstock
     uint8_t beer;       ///< Number of beers
+    uint8_t color[3];   ///< RGB color of the Frackstock
     char abrev[9];      ///< Abbreviation of the Owner
 } tFrackStock;
 

@@ -64,7 +64,7 @@ extern PicoLed::PicoLedController ledStrip;
 // Function prototypes
 int LED_Ring_init();
 void LED_Ring_Tick();
-
+void LED_Ring_set_color(uint8_t r, uint8_t g, uint8_t b);
 void LED_Ring_set_mode(eLED_MODE mode);
 void SEG_set_mode(eSEG_MODE mode);
 

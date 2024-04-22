@@ -44,6 +44,10 @@ void DEV_LED_toggle(){
 }
 
 
+void DEV_reset_mcu() {
+     *((volatile uint32_t*)(PPB_BASE + 0x0ED0C)) = 0x5FA0004;
+}
+
 /**
  * @brief Initializes the device.
  * 
@@ -87,11 +91,13 @@ int DEV_init() {
             write_data[IDX_BEER] = 0;
             write_data[IDX_FLASH_CNT] = 1;
             memcpy(write_data + IDX_ABREV, DEF_ABREV, LEN_ABREV);
+            memcpy(write_data + IDX_COLOR, "\x00\xff\x00", LEN_COLOR);
         } else {
             write_data[IDX_VERSION] = VERSION_MAJOR << 4 | VERSION_MINOR;
             write_data[IDX_BEER] = flash_target_contents[IDX_BEER];
             write_data[IDX_FLASH_CNT] = flash_target_contents[IDX_FLASH_CNT] + 1;
             memcpy(write_data + IDX_ABREV, flash_target_contents + IDX_ABREV, LEN_ABREV);
+            memcpy(write_data + IDX_COLOR, flash_target_contents + IDX_COLOR, LEN_COLOR);
         }
 
         printf("New data:\n");
@@ -139,6 +145,7 @@ void DEV_get_frack_data(tFrackStock *frackstock) {
     frackstock->id = unique_id[7];
     frackstock->beer = flash_target_contents[IDX_BEER];
     memcpy(frackstock->abrev, flash_target_contents + IDX_ABREV, LEN_ABREV);
+    memcpy(frackstock->color, flash_target_contents + IDX_COLOR, LEN_COLOR);
 }
 
 
@@ -161,6 +168,7 @@ void DEV_set_frack_data(tFrackStock *frackstock){
     write_data[IDX_VERSION] = VERSION_MAJOR << 4 | VERSION_MINOR;   
     write_data[IDX_BEER] = frackstock->beer;
     memcpy(write_data + IDX_ABREV, frackstock->abrev, LEN_ABREV);
+    memcpy(write_data + IDX_COLOR, frackstock->color, LEN_COLOR);
 
     uint32_t interrupts = save_and_disable_interrupts();
 

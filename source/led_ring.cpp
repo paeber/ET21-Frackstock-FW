@@ -336,6 +336,25 @@ int LED_Ring_init(){
 }
 
 
+/**
+ * Sets the default color of the LED ring.
+ *
+ * @param r The red component of the color (0-255).
+ * @param g The green component of the color (0-255).
+ * @param b The blue component of the color (0-255).
+ */
+void LED_Ring_set_color(uint8_t r, uint8_t g, uint8_t b){
+    ledColor = PicoLed::RGB(r, g, b);
+}
+
+
+/**
+ * Sets the mode of the LED ring.
+ *
+ * This function sets the mode of the LED ring to the specified mode.
+ *
+ * @param mode The mode to set for the LED ring.
+ */
 void LED_Ring_set_mode(eLED_MODE mode){
     activeLED_MODE = mode;
     led_off_delay_cnt = LED_DEFAULT_ON_TIME;
