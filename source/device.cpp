@@ -44,8 +44,14 @@ void DEV_LED_toggle(){
 }
 
 
+/**
+ * @brief Resets the microcontroller.
+ *
+ * This function performs a reset of the microcontroller by writing a specific value to a memory address.
+ */
 void DEV_reset_mcu() {
-     *((volatile uint32_t*)(PPB_BASE + 0x0ED0C)) = 0x5FA0004;
+    // *((volatile uint32_t*)(PPB_BASE + 0x0ED0C)) = 0x5FA0004;
+    while (1){}; // Wait for reset by watchdog
 }
 
 /**
