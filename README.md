@@ -1,5 +1,18 @@
 # ET21-Frackstock-FW
 
+## Features
+
+- [x] LED Ring color effects
+- [x] Segment show HEX and DEC numbers
+- [x] 868 MHz Tx and Rx
+- [x] IMU Tap detection
+- [x] Persistent flash storage for custom settings
+
+### To do
+
+- [ ] IMU Interrupts
+- [ ] IMU any_motion and no_motion detection
+
 ## Flash instruction
 1. Press <kbd>BOOTSEL</kbd> button on Pico board
 2. Plug in the device to PC (or press reset if possible)
