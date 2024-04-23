@@ -331,6 +331,9 @@ int LED_Ring_init(){
 
     // Initialize the LED ring
     ledStrip.setBrightness(LED_RING_BRIGHTNESS);
+    #ifdef MAX_POWER_TEST
+    ledStrip.setBrightness(255);
+    #endif
 
     return 0;
 }

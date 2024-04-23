@@ -11,6 +11,8 @@
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 6
 
+//#define MAX_POWER_TEST
+
 #define BUILTIN_LED_PIN 25
 
 #endif // MAIN_H

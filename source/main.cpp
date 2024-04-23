@@ -25,7 +25,6 @@
 #include "serial.h"
 
 
-
 int main() {
     int ret;
     static absolute_time_t last_time;
@@ -82,7 +81,14 @@ int main() {
             SEG_write_number_hex(0xAA);
         }
 
-
+        #ifdef MAX_POWER_TEST
+        if (cnt % 4 == 0) 
+        {
+            LED_Ring_set_color(255, 255, 255);
+            LED_Ring_set_mode(LED_MODE_ON);
+            SEG_set_mode(SEG_MODE_ON);
+        }
+        #endif
 
         // Tasks
         if(cnt % 1 == 0)
