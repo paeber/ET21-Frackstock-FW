@@ -37,13 +37,21 @@
             <div class="row mb-3">
                 <div class="col">
                     <button id="connect" class="btn btn-primary">Verbinden</button>
-                    <button id="receive" class="btn btn-secondary" disabled>Empfangen</button>
-                    <button id="send" class="btn btn-secondary" disabled>Senden</button>
+                    <button id="toggleRead" class="btn btn-primary" disabled>Listener</button>
                     <button id="apply" class="btn btn-secondary" disabled>Apply</button>
                     <button id="reset" class="btn btn-danger" disabled>Reset</button>
+                    <button id="receive" class="btn btn-secondary" disabled>Empfangen</button>
+                    <button id="send" class="btn btn-secondary" disabled>Senden</button>
                 </div>
             </div>
 
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Device Info</h5>
+                    <button id="getStatus" class="btn btn-primary" disabled>Refresh</button>
+                    <div id="deviceInfo"></div>
+                </div>
+            </div>
             <div class="card mb-3">
                 <div class="card-body">
                     <h5 class="card-title">Color</h5>
@@ -71,10 +79,57 @@
 
     <script>
         let port;
+        let isReading = false;
 
         async function listenToSerialPort() {
-        let reader = port.readable.getReader();
-        try {
+            let reader = port.readable.getReader();
+            isReading = true;
+            try {
+                while (isReading) {
+                    let { value, done } = await reader.read();
+                    if (done) {
+                        // Der Port wurde geschlossen oder es ist ein Fehler aufgetreten.
+                        break;
+                    }
+                    let decoder = new TextDecoder('utf-8');
+                    let data = decoder.decode(value);
+                    let messages = data.split('\n');
+                    for (let message of messages) {
+                        if (message) {
+                            let timestamp = new Date().toLocaleTimeString();
+                            document.getElementById('message').innerHTML += `<p>[${timestamp}]: ${message}</p>`;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error("Es gab einen Fehler beim Lesen vom seriellen Port: ", error);
+            } finally {
+                reader.releaseLock();
+            }
+        }
+
+        
+        document.getElementById('toggleRead').addEventListener('click', function() {
+            isReading = !isReading;
+            this.textContent = isReading ? 'Lesevorgang deaktivieren' : 'Lesevorgang aktivieren';
+            if (isReading) {
+                // Starten Sie den Lesevorgang
+                listenToSerialPort();
+            } else {
+                // Stoppen Sie den Lesevorgang
+                // Der Lesevorgang wird automatisch gestoppt, wenn der Port geschlossen wird.
+            }
+        });
+
+        async function getStatus() {
+            // Senden Sie den Befehl "status\n" an den seriellen Port
+            let encoder = new TextEncoder('utf-8');
+            let data = encoder.encode("status\n");
+            await port.writable.getWriter().write(data);
+
+            // Lesen Sie die Antwort vom seriellen Port
+            let reader = port.readable.getReader();
+            let response = '';
             while (true) {
                 let { value, done } = await reader.read();
                 if (done) {
@@ -82,21 +137,45 @@
                     break;
                 }
                 let decoder = new TextDecoder('utf-8');
-                let data = decoder.decode(value);
-                let messages = data.split('\n');
-                for (let message of messages) {
-                    if (message) {
-                        let timestamp = new Date().toLocaleTimeString();
-                        document.getElementById('message').innerHTML += `<p>[${timestamp}]: ${message}</p>`;
-                    }
+                let chunk = decoder.decode(value);
+                let newlineIndex = chunk.indexOf('\n');
+                if (newlineIndex !== -1) {
+                    response += chunk.substring(0, newlineIndex);
+                    break;
+                } else {
+                    response += chunk;
                 }
             }
-        } catch (error) {
-            console.error("Es gab einen Fehler beim Lesen vom seriellen Port: ", error);
-        } finally {
-            reader.releaseLock();
+
+            // Analysieren Sie die Antwort als JSON
+            let status = JSON.parse(response);
+
+            // Zeigen Sie die analysierten Daten in der deviceInfo div an
+            document.getElementById('deviceInfo').innerHTML = `
+                <table>
+                    <tr>
+                        <td>Version:</td>
+                        <td>${status.v}</td>
+                    </tr>
+                    <tr>
+                        <td>ID:</td>
+                        <td>${status.id}</td>
+                    </tr>
+                    <tr>
+                        <td>Beer:</td>
+                        <td>${status.beer}</td>
+                    </tr>
+                    <tr>
+                        <td>Color:</td>
+                        <td>${status.color}</td>
+                    </tr>
+                    <tr>
+                        <td>Abreviation:</td>
+                        <td>${status.abrev}</td>
+                    </tr>
+                </table>
+            `;
         }
-    }
 
         document.getElementById('connect').addEventListener('click', async () => {
             port = await navigator.serial.requestPort();
@@ -108,8 +187,10 @@
             document.getElementById('setAbrev').disabled = false;
             document.getElementById('apply').disabled = false;
             document.getElementById('reset').disabled = false;
+            document.getElementById('getStatus').disabled = false;
+            document.getElementById('toggleRead').disabled = false;
 
-            listenToSerialPort();
+            //listenToSerialPort();
         });
 
         document.getElementById('receive').addEventListener('click', async () => {
@@ -166,6 +247,8 @@
             await writer.write(data);
             writer.releaseLock();
         });
+
+        document.getElementById('getStatus').addEventListener('click', getStatus);
 
     </script>
 </body>

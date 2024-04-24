@@ -26,6 +26,7 @@ uint8_t syncWord[2] = {0x47, 0xB5};
 bool packetWaiting = false;
 
 uint8_t rxFrom_id;
+uint8_t buffer[100];
 bool new_message = false;
 
 // Function prototypes
@@ -55,23 +56,17 @@ void handleMessage(){
   CCPACKET packet;
   gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
   if (radio.receiveData(&packet) > 0){
-    printf("Received packet...\n");
     if (!packet.crc_ok)
     {
-        printf("crc not ok\n");
+        printf("[RF] crc not ok\n");
     }
-    printf("lqi: %d, ", 0x3f - packet.lqi);
-    printf("rssi: %d dBm\n", RADIO_get_rssi(packet.rssi));
+    sprintf((char *)buffer, "lqi: %d, rssi: %d dBm", 0x3f - packet.lqi, RADIO_get_rssi(packet.rssi));
+    printf("[RF] RX: %s\n", buffer);
 
     if (packet.crc_ok && packet.length > 0)
     {
-        printf("packet: len %d, ", packet.length);
-        printf("data: ");
-        for(int i=0; i<packet.length; i++)
-        {
-            printf("%02x ", packet.data[i]);
-        }
-        printf("\n");
+        sprintf((char *)buffer, "packet: len %d", packet.length);
+        printf("[RF] RX: %s\n", buffer);
 
         SEG_set_mode(SEG_MODE_CUSTOM);
         LED_Ring_set_mode(LED_MODE_WALK);

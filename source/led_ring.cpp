@@ -195,7 +195,7 @@ void SEG_add_dot(uint8_t digit){
 
     ret = i2c_write_timeout_us(SEG_I2C_PORT, PCA_ADDR, data, 5, false, I2C_TIMEOUT);
     if (ret == PICO_ERROR_GENERIC || ret == PICO_ERROR_TIMEOUT) {
-        printf("Error: %d\n", ret);
+        printf("[SEG] Error: %d\n", ret);
         LED_Ring_initialized = false;
     }
 }
@@ -302,7 +302,7 @@ int PCA9552_init(){
 
     ret = SEG_clear();
     if (ret == PICO_ERROR_GENERIC || ret == PICO_ERROR_TIMEOUT) {
-        printf("Error: %d\n", ret);
+        printf("[SEG] Error: %d\n", ret);
         LED_Ring_initialized = false;
         return ret;
     }
