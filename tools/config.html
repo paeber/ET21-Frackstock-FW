@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+        <script>
+            if (!('serial' in navigator)) {
+                alert('Web Serial API not supported.');
+            }
+        </script>
+        <title>Frackstock Configurator</title>
+    </head>
+    <body>
+        <style>
+            #message {
+                background-color: black;
+                color: white;
+                font-family: 'Courier New', monospace;
+                height: 400px;
+                overflow: auto;
+                white-space: pre-wrap;
+                padding: 10px;
+            }
+            #message p {
+                line-height: 1.2;
+            }
+        </style>
+
+        <div class="container">
+            <div class="row mb-3">
+                <div class="col">
+                    <h1>Frackstock Configurator</h1>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row mb-3">
+                <div class="col">
+                    <button id="connect" class="btn btn-primary">Verbinden</button>
+                    <button id="receive" class="btn btn-secondary" disabled>Empfangen</button>
+                    <button id="send" class="btn btn-secondary" disabled>Senden</button>
+                    <button id="apply" class="btn btn-secondary" disabled>Apply</button>
+                    <button id="reset" class="btn btn-danger" disabled>Reset</button>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Color</h5>
+                    Red:<input type="number" id="red" min="0" max="255" class="ml-2">
+                    Green:<input type="number" id="green" min="0" max="255" class="ml-2">
+                    Blue:<input type="number" id="blue" min="0" max="255" class="ml-2">
+                    <button id="setColor" class="btn btn-primary ml-2" disabled>Set</button>
+                </div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Abreviation</h5>
+                    Max 8 characters
+                    <input type="text" id="abrev" class="ml-2">
+                    <button id="setAbrev" class="btn btn-primary ml-2" disabled>Set</button>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col">
+                    <div id="message" class="alert alert-info"></div>
+                </div>
+            </div>
+        </div>
+
+    <script>
+        let port;
+
+        async function listenToSerialPort() {
+        let reader = port.readable.getReader();
+        try {
+            while (true) {
+                let { value, done } = await reader.read();
+                if (done) {
+                    // Der Port wurde geschlossen oder es ist ein Fehler aufgetreten.
+                    break;
+                }
+                let decoder = new TextDecoder('utf-8');
+                let data = decoder.decode(value);
+                let messages = data.split('\n');
+                for (let message of messages) {
+                    if (message) {
+                        let timestamp = new Date().toLocaleTimeString();
+                        document.getElementById('message').innerHTML += `<p>[${timestamp}]: ${message}</p>`;
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Es gab einen Fehler beim Lesen vom seriellen Port: ", error);
+        } finally {
+            reader.releaseLock();
+        }
+    }
+
+        document.getElementById('connect').addEventListener('click', async () => {
+            port = await navigator.serial.requestPort();
+            await port.open({ baudRate: 115200 });
+
+            document.getElementById('receive').disabled = false;
+            document.getElementById('send').disabled = false;
+            document.getElementById('setColor').disabled = false;
+            document.getElementById('setAbrev').disabled = false;
+            document.getElementById('apply').disabled = false;
+            document.getElementById('reset').disabled = false;
+
+            listenToSerialPort();
+        });
+
+        document.getElementById('receive').addEventListener('click', async () => {
+            let reader = port.readable.getReader();
+            let { value, done } = await reader.read();
+            let decoder = new TextDecoder('utf-8');
+            let message = decoder.decode(value);
+            document.getElementById('message').textContent = message;
+            reader.releaseLock();
+        });
+
+        document.getElementById('send').addEventListener('click', async () => {
+            let writer = port.writable.getWriter();
+            let encoder = new TextEncoder();
+            let data = encoder.encode('status\n');
+            await writer.write(data);
+            writer.releaseLock();
+        });
+
+        document.getElementById('setColor').addEventListener('click', async () => {
+            let red = document.getElementById('red').value;
+            let green = document.getElementById('green').value;
+            let blue = document.getElementById('blue').value;
+
+            let writer = port.writable.getWriter();
+            let encoder = new TextEncoder();
+            let data = encoder.encode(`set color (${red},${green},${blue})\n`);
+            await writer.write(data);
+            writer.releaseLock();
+        });
+
+        document.getElementById('setAbrev').addEventListener('click', async () => {
+            let abrev = document.getElementById('abrev').value;
+
+            let writer = port.writable.getWriter();
+            let encoder = new TextEncoder();
+            let data = encoder.encode(`set abrev ${abrev}\n`);
+            await writer.write(data);
+            writer.releaseLock();
+        });
+
+        document.getElementById('reset').addEventListener('click', async () => {
+            let writer = port.writable.getWriter();
+            let encoder = new TextEncoder();
+            let data = encoder.encode('reset\n');
+            await writer.write(data);
+            writer.releaseLock();
+        });
+
+        document.getElementById('apply').addEventListener('click', async () => {
+            let writer = port.writable.getWriter();
+            let encoder = new TextEncoder();
+            let data = encoder.encode('apply\n');
+            await writer.write(data);
+            writer.releaseLock();
+        });
+
+    </script>
+</body>
+</html>

@@ -58,7 +58,7 @@ void SERIAL_handle(){
         printf("set abrev - Set a new abreviation\n");
         printf("set beer - Set the amount of beer\n");
         printf("reset beer - Reset the amount of beer\n");
-        printf("set color - Set the color of the LED Ring\n");
+        printf("set color - Set the (r,g,b) of the LED Ring\n");
         printf("apply - Apply the changes\n");
     } else if(strcmp((char *)buffer, "status") == 0) {
         printf("Status:\n");
@@ -82,10 +82,14 @@ void SERIAL_handle(){
         frackstock.beer = 0;
         printf("New beer amount set\n");
     } else if(strncmp((char *)buffer, "set color ", 10) == 0) {
-        // Parse the color by reading 3 uint8_t numbers
-        frackstock.color[0] = atoi((char *)buffer+10);
-        frackstock.color[1] = atoi((char *)buffer+13);
-        frackstock.color[2] = atoi((char *)buffer+16);
+        // Parse the color by reading (r,g,b)
+        int r = 0;
+        int g = 0;
+        int b = 0;
+        sscanf((char *)buffer+10, "(%d,%d,%d)", &r, &g, &b);
+        frackstock.color[0] = r;
+        frackstock.color[1] = g;
+        frackstock.color[2] = b;
         printf("New color set\n");
     } else if(strcmp((char *)buffer, "apply") == 0){
         DEV_set_frack_data(&frackstock);
