@@ -26,7 +26,7 @@ uint8_t syncWord[2] = {0x47, 0xB5};
 bool packetWaiting = false;
 
 uint8_t rxFrom_id;
-uint8_t buffer[100];
+uint8_t serBuffer[100];
 bool new_message = false;
 
 // Function prototypes
@@ -60,13 +60,13 @@ void handleMessage(){
     {
         printf("[RF] crc not ok\n");
     }
-    sprintf((char *)buffer, "lqi: %d, rssi: %d dBm", 0x3f - packet.lqi, RADIO_get_rssi(packet.rssi));
-    printf("[RF] RX: %s\n", buffer);
+    sprintf((char *)serBuffer, "lqi: %d, rssi: %d dBm", 0x3f - packet.lqi, RADIO_get_rssi(packet.rssi));
+    printf("[RF] RX: %s\n", serBuffer);
 
     if (packet.crc_ok && packet.length > 0)
     {
-        sprintf((char *)buffer, "packet: len %d", packet.length);
-        printf("[RF] RX: %s\n", buffer);
+        sprintf((char *)serBuffer, "packet: len %d", packet.length);
+        printf("[RF] RX: %s\n", serBuffer);
 
         SEG_set_mode(SEG_MODE_CUSTOM);
         LED_Ring_set_mode(LED_MODE_WALK);

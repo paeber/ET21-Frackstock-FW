@@ -20,9 +20,7 @@
                 white-space: pre-wrap;
                 padding: 10px;
             }
-            #message p {
-                line-height: 1.2;
-            }
+
         </style>
 
         <div class="container">
@@ -37,41 +35,49 @@
             <div class="row mb-3">
                 <div class="col">
                     <button id="connect" class="btn btn-primary">Verbinden</button>
-                    <button id="toggleRead" class="btn btn-primary" disabled>Listener</button>
-                    <button id="apply" class="btn btn-secondary" disabled>Apply</button>
+                    <button id="apply" class="btn btn-primary" disabled>Apply</button>
                     <button id="reset" class="btn btn-danger" disabled>Reset</button>
-                    <button id="receive" class="btn btn-secondary" disabled>Empfangen</button>
-                    <button id="send" class="btn btn-secondary" disabled>Senden</button>
                 </div>
             </div>
 
             <div class="card mb-3">
                 <div class="card-body">
-                    <h5 class="card-title">Device Info</h5>
-                    <button id="getStatus" class="btn btn-primary" disabled>Refresh</button>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title">Device Info</h5>
+                        <button id="getStatus" class="btn btn-primary" disabled>Refresh</button>
+                    </div>
                     <div id="deviceInfo"></div>
                 </div>
             </div>
             <div class="card mb-3">
                 <div class="card-body">
-                    <h5 class="card-title">Color</h5>
-                    Red:<input type="number" id="red" min="0" max="255" class="ml-2">
-                    Green:<input type="number" id="green" min="0" max="255" class="ml-2">
-                    Blue:<input type="number" id="blue" min="0" max="255" class="ml-2">
-                    <button id="setColor" class="btn btn-primary ml-2" disabled>Set</button>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title">Color</h5>
+                        <button id="setColor" class="btn btn-primary ml-2" disabled>Set</button>
+                    </div>
+                    
+                    Red:<input type="number" id="red" min="0" max="255" value="0" class="ml-2">
+                    Green:<input type="number" id="green" min="0" max="255" value="255" class="ml-2">
+                    Blue:<input type="number" id="blue" min="0" max="255" value="0" class="ml-2">
                 </div>
             </div>
             <div class="card mb-3">
                 <div class="card-body">
-                    <h5 class="card-title">Abreviation</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title">Abreviation</h5>
+                        <button id="setAbrev" class="btn btn-primary ml-2" disabled>Set</button>
+                    </div>
                     Max 8 characters
                     <input type="text" id="abrev" class="ml-2">
-                    <button id="setAbrev" class="btn btn-primary ml-2" disabled>Set</button>
                 </div>
             </div>
 
             <div class="row mb-3">
                 <div class="col">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title">Terminal</h5>
+                        <button id="terminal" class="btn btn-primary ml-2" disabled>Enable</button>
+                    </div>
                     <div id="message" class="alert alert-info"></div>
                 </div>
             </div>
@@ -79,176 +85,114 @@
 
     <script>
         let port;
-        let isReading = false;
+        let reader;
+        let encoder = new TextEncoder('utf-8');
+        let lines = [];
 
-        async function listenToSerialPort() {
-            let reader = port.readable.getReader();
-            isReading = true;
-            try {
-                while (isReading) {
-                    let { value, done } = await reader.read();
-                    if (done) {
-                        // Der Port wurde geschlossen oder es ist ein Fehler aufgetreten.
-                        break;
-                    }
+        function appendMessage(text) {
+            let messageBox = document.getElementById('message');
+            let timestamp = new Date().toLocaleTimeString();
+            messageBox.innerHTML += `[${timestamp}]: ${text}`;
+        }
+
+        async function sendMessage(message) {
+            let data = encoder.encode(message + "\n");
+            const writer = port.writable.getWriter();
+            await writer.write(data);
+            writer.releaseLock();
+        }
+
+        async function readLoop() {
+            let response = '';
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) {
+                    // The port has been closed or there was an error.
+                    break;
+                } else {
                     let decoder = new TextDecoder('utf-8');
-                    let data = decoder.decode(value);
-                    let messages = data.split('\n');
-                    for (let message of messages) {
-                        if (message) {
-                            let timestamp = new Date().toLocaleTimeString();
-                            document.getElementById('message').innerHTML += `<p>[${timestamp}]: ${message}</p>`;
+                    let chunk = decoder.decode(value);
+                    if (chunk.includes('\n')) {
+                        let parts = chunk.split('\n');
+                        lines.push(response + parts[0]);
+                        response = parts[1];
+                        for (let line of lines) {
+                            processStatus(line);
                         }
+                        lines = [];
+                    } else {
+                        response += chunk;
                     }
+
                 }
-            } catch (error) {
-                console.error("Es gab einen Fehler beim Lesen vom seriellen Port: ", error);
-            } finally {
-                reader.releaseLock();
             }
         }
 
-        
-        document.getElementById('toggleRead').addEventListener('click', function() {
-            isReading = !isReading;
-            this.textContent = isReading ? 'Lesevorgang deaktivieren' : 'Lesevorgang aktivieren';
-            if (isReading) {
-                // Starten Sie den Lesevorgang
-                listenToSerialPort();
-            } else {
-                // Stoppen Sie den Lesevorgang
-                // Der Lesevorgang wird automatisch gestoppt, wenn der Port geschlossen wird.
+        function processStatus(status) {
+            // This function will be called whenever a status message is received
+            // TODO: Implement your status processing here
+            console.log(status);
+            appendMessage(status);
+
+            // Check if the status message is a valid JSON object
+            try {
+                let statusObj = JSON.parse(status);
+                // Zeigen Sie die analysierten Daten in der deviceInfo div an
+                document.getElementById('deviceInfo').innerHTML = `
+                    <table>
+                        <tr><td>Version:</td><td>${statusObj.v}</td></tr>
+                        <tr><td>ID:</td><td>${statusObj.id}</td></tr>
+                        <tr><td>Beer:</td><td>${statusObj.beer}</td></tr>
+                        <tr><td>Color:</td><td>${statusObj.color}</td></tr>
+                        <tr><td>Abreviation:</td><td>${statusObj.abrev}</td></tr>
+                    </table>
+                `;
+            } catch (e) {
+                // The status message is not a valid JSON object
             }
-        });
+        }
 
-        async function getStatus() {
-            // Senden Sie den Befehl "status\n" an den seriellen Port
-            let encoder = new TextEncoder('utf-8');
-            let data = encoder.encode("status\n");
-            await port.writable.getWriter().write(data);
-
-            // Lesen Sie die Antwort vom seriellen Port
-            let reader = port.readable.getReader();
-            let response = '';
-            while (true) {
-                let { value, done } = await reader.read();
-                if (done) {
-                    // Der Port wurde geschlossen oder es ist ein Fehler aufgetreten.
-                    break;
-                }
-                let decoder = new TextDecoder('utf-8');
-                let chunk = decoder.decode(value);
-                let newlineIndex = chunk.indexOf('\n');
-                if (newlineIndex !== -1) {
-                    response += chunk.substring(0, newlineIndex);
-                    break;
-                } else {
-                    response += chunk;
-                }
-            }
-
-            // Analysieren Sie die Antwort als JSON
-            let status = JSON.parse(response);
-
-            // Zeigen Sie die analysierten Daten in der deviceInfo div an
-            document.getElementById('deviceInfo').innerHTML = `
-                <table>
-                    <tr>
-                        <td>Version:</td>
-                        <td>${status.v}</td>
-                    </tr>
-                    <tr>
-                        <td>ID:</td>
-                        <td>${status.id}</td>
-                    </tr>
-                    <tr>
-                        <td>Beer:</td>
-                        <td>${status.beer}</td>
-                    </tr>
-                    <tr>
-                        <td>Color:</td>
-                        <td>${status.color}</td>
-                    </tr>
-                    <tr>
-                        <td>Abreviation:</td>
-                        <td>${status.abrev}</td>
-                    </tr>
-                </table>
-            `;
+        async function startReading() {
+            reader = port.readable.getReader();
+            await readLoop();
         }
 
         document.getElementById('connect').addEventListener('click', async () => {
             port = await navigator.serial.requestPort();
             await port.open({ baudRate: 115200 });
 
-            document.getElementById('receive').disabled = false;
-            document.getElementById('send').disabled = false;
             document.getElementById('setColor').disabled = false;
             document.getElementById('setAbrev').disabled = false;
             document.getElementById('apply').disabled = false;
             document.getElementById('reset').disabled = false;
             document.getElementById('getStatus').disabled = false;
-            document.getElementById('toggleRead').disabled = false;
 
-            //listenToSerialPort();
-        });
-
-        document.getElementById('receive').addEventListener('click', async () => {
-            let reader = port.readable.getReader();
-            let { value, done } = await reader.read();
-            let decoder = new TextDecoder('utf-8');
-            let message = decoder.decode(value);
-            document.getElementById('message').textContent = message;
-            reader.releaseLock();
-        });
-
-        document.getElementById('send').addEventListener('click', async () => {
-            let writer = port.writable.getWriter();
-            let encoder = new TextEncoder();
-            let data = encoder.encode('status\n');
-            await writer.write(data);
-            writer.releaseLock();
+            startReading();
         });
 
         document.getElementById('setColor').addEventListener('click', async () => {
             let red = document.getElementById('red').value;
             let green = document.getElementById('green').value;
             let blue = document.getElementById('blue').value;
-
-            let writer = port.writable.getWriter();
-            let encoder = new TextEncoder();
-            let data = encoder.encode(`set color (${red},${green},${blue})\n`);
-            await writer.write(data);
-            writer.releaseLock();
+            sendMessage(`set color ${red} ${green} ${blue}`);
         });
 
         document.getElementById('setAbrev').addEventListener('click', async () => {
             let abrev = document.getElementById('abrev').value;
-
-            let writer = port.writable.getWriter();
-            let encoder = new TextEncoder();
-            let data = encoder.encode(`set abrev ${abrev}\n`);
-            await writer.write(data);
-            writer.releaseLock();
+            sendMessage(`set abrev ${abrev}`);
         });
 
         document.getElementById('reset').addEventListener('click', async () => {
-            let writer = port.writable.getWriter();
-            let encoder = new TextEncoder();
-            let data = encoder.encode('reset\n');
-            await writer.write(data);
-            writer.releaseLock();
+            sendMessage('reset');
         });
 
         document.getElementById('apply').addEventListener('click', async () => {
-            let writer = port.writable.getWriter();
-            let encoder = new TextEncoder();
-            let data = encoder.encode('apply\n');
-            await writer.write(data);
-            writer.releaseLock();
+            sendMessage('apply');
         });
 
-        document.getElementById('getStatus').addEventListener('click', getStatus);
+        document.getElementById('getStatus').addEventListener('click', async () => {
+            await sendMessage('status');
+        });
 
     </script>
 </body>

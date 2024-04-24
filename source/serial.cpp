@@ -38,7 +38,6 @@ void SERIAL_Tick() {
         if(c == '\n') {
             buffer[userInput] = '\0';
             userInput = 0;
-            printf("Received: %s\n", buffer);
             SERIAL_handle();
         } else if(c == '\r') {
             // Ignore
@@ -63,15 +62,6 @@ void SERIAL_handle(){
     } else if(strcmp((char *)buffer, "status") == 0) {
         sprintf((char *)buffer, "{\"v\": %d.%d, \"id\": %d, \"beer\": %d, \"color\": [%d, %d, %d], \"abrev\": \"%s\"}", VERSION_MAJOR, VERSION_MINOR, frackstock.id, frackstock.beer, frackstock.color[0], frackstock.color[1], frackstock.color[2], frackstock.abrev);
         printf("%s\n", buffer);
-        // printf("{");
-        // printf("Version: %d.%d\n", VERSION_MAJOR, VERSION_MINOR);
-        // printf("ID: 0x%02X\n", frackstock.id);
-        // printf("Beer: %d\n", frackstock.beer);
-        // printf("Color: %d, %d, %d\n", frackstock.color[0], frackstock.color[1], frackstock.color[2]);
-        // printf("Abrev: ");
-        // for(int i = 0; i < LEN_ABREV; i++) {
-        //     printf("%c", frackstock.abrev[i]);
-        // }
     } else if (strncmp((char *)buffer, "set abrev ", 10) == 0) {
         for(int i = 0; i < LEN_ABREV; i++) {
             frackstock.abrev[i] = buffer[i+10];
