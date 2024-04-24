@@ -76,7 +76,6 @@
                 <div class="col">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title">Terminal</h5>
-                        <button id="terminal" class="btn btn-primary ml-2" disabled>Enable</button>
                     </div>
                     <div id="message" class="alert alert-info"></div>
                 </div>
@@ -174,7 +173,7 @@
             let red = document.getElementById('red').value;
             let green = document.getElementById('green').value;
             let blue = document.getElementById('blue').value;
-            sendMessage(`set color ${red} ${green} ${blue}`);
+            sendMessage(`set color (${red},${green},${blue})`);
         });
 
         document.getElementById('setAbrev').addEventListener('click', async () => {
@@ -184,6 +183,12 @@
 
         document.getElementById('reset').addEventListener('click', async () => {
             sendMessage('reset');
+            
+            document.getElementById('setColor').disabled = true;
+            document.getElementById('setAbrev').disabled = true;
+            document.getElementById('apply').disabled = true;
+            document.getElementById('reset').disabled = true;
+            document.getElementById('getStatus').disabled = true;
         });
 
         document.getElementById('apply').addEventListener('click', async () => {
