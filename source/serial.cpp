@@ -59,6 +59,7 @@ void SERIAL_handle(){
         printf("reset beer - Reset the amount of beer\n");
         printf("set color - Set the (r,g,b) of the LED Ring\n");
         printf("apply - Apply the changes\n");
+        printf("bootloader - Enter the bootloader (disabled)\n");
     } else if(strcmp((char *)buffer, "status") == 0) {
         sprintf((char *)buffer, "{\"v\": %d.%d, \"id\": %d, \"beer\": %d, \"color\": [%d, %d, %d], \"abrev\": \"%s\"}", VERSION_MAJOR, VERSION_MINOR, frackstock.id, frackstock.beer, frackstock.color[0], frackstock.color[1], frackstock.color[2], frackstock.abrev);
         printf("%s\n", buffer);
@@ -88,6 +89,8 @@ void SERIAL_handle(){
         printf("Changes applied\n");
     } else if(strcmp((char *)buffer, "reset") == 0){
         DEV_reset_mcu();
+    } else if(strcmp((char *)buffer, "bootloader") == 0){
+        DEV_enter_bootloader();
     } else {
         printf("Unknown command\n");
     }

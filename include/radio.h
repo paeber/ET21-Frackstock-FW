@@ -34,6 +34,9 @@
 #define PACKET_IDX_REPEATER_1   3
 #define PACKET_IDX_REPEATER_2   4
 #define PACKET_IDX_BEER         5
+#define PACKET_IDX_COLOR_R      6
+#define PACKET_IDX_COLOR_G      7
+#define PACKET_IDX_COLOR_B      8
 
 
 

@@ -185,3 +185,10 @@ void DEV_set_frack_data(tFrackStock *frackstock){
     restore_interrupts(interrupts);
 
 }
+
+
+void DEV_enter_bootloader() {
+    // Set the magic value to reboot to the bootloader
+    //flash_range_program(FLASH_TARGET_OFFSET + 0x10, (const uint8_t *)"\x01\x23\x45\x67\x89\xAB\xCD\xEF", 8);
+    //DEV_reset_mcu();
+}

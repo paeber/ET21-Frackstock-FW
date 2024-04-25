@@ -108,6 +108,24 @@ int SEG_add_to_buffer(uint8_t number, eSEG_NUMBER_MODE mode){
     return 0;
 }
 
+
+/**
+ * Removes the first element from the display buffer and shifts the remaining elements.
+ * 
+ * @return 0 if an element was successfully removed, -1 if the buffer is empty.
+ */
+int SEG_pop_from_buffer(){
+    if(SEG_DisplayBufferPending > 0){
+        SEG_DisplayBufferPending--;
+        for(int i=0; i<SEG_DISPLAY_BUFFER_LENGTH -1; i++){
+            SEG_DisplayBuffer[i] = SEG_DisplayBuffer[i+1];
+            SEG_DisplayBufferMode[i] = SEG_DisplayBufferMode[i+1];
+        }
+        return 0;
+    }
+    return -1;
+}
+
 /**
  * Writes a number to the LED segment display.
  *
@@ -381,14 +399,23 @@ void LED_Ring_set_color(uint8_t r, uint8_t g, uint8_t b){
  * @param mode The mode to set for the LED ring.
  */
 void LED_Ring_set_mode(eLED_MODE mode){
+    ledStrip.fill( PicoLed::RGB(0, 0, 0) );
     activeLED_MODE = mode;
     led_off_delay_cnt = LED_DEFAULT_ON_TIME;
 }
 
 
 void SEG_set_mode(eSEG_MODE mode){
+    if(activeSEG_MODE == SEG_MODE_BUFFER && mode != SEG_MODE_BUFFER){
+        if(seg_off_delay_cnt < SEG_DEFAULT_ON_TIME){
+            SEG_pop_from_buffer();
+        }
+    }
     activeSEG_MODE = mode;
     seg_off_delay_cnt = SEG_DEFAULT_ON_TIME;
+    if(mode == SEG_MODE_OFF){
+        seg_off_delay_cnt = 0;
+    }
 }
 
 
@@ -452,12 +479,8 @@ void SEG_Tick(){
     } else if(activeSEG_MODE == SEG_MODE_CUSTOM && SEG_DisplayBufferPending > 0){
         SEG_set_mode(SEG_MODE_BUFFER);
     } else if (activeSEG_MODE == SEG_MODE_BUFFER){
-        if (SEG_DisplayBufferPending > 1){
-            SEG_DisplayBufferPending--;
-            for(int i=0; i<SEG_DISPLAY_BUFFER_LENGTH -1; i++){
-                SEG_DisplayBuffer[i] = SEG_DisplayBuffer[i+1];
-                SEG_DisplayBufferMode[i] = SEG_DisplayBufferMode[i+1];
-            }
+        if (SEG_DisplayBufferPending > 0){
+            SEG_pop_from_buffer();
             seg_off_delay_cnt = SEG_DEFAULT_ON_TIME;
         } else {
             activeSEG_MODE = SEG_MODE_OFF;
@@ -488,9 +511,11 @@ void SEG_Tick(){
                 break;
 
             case SEG_MODE_BUFFER:
-                if(SEG_DisplayBufferMode[0] == SEG_NUMBER_MODE_DEC){
+                if(SEG_DisplayBuffer[0] == 0){
+                    SEG_set_mode(SEG_MODE_OFF);
+                } else if(SEG_DisplayBufferMode[0] == SEG_NUMBER_MODE_DEC){
                     SEG_write_number(SEG_DisplayBuffer[0]);
-                } else {
+                } else if(SEG_DisplayBufferMode[0] == SEG_NUMBER_MODE_HEX){
                     SEG_write_number_hex(SEG_DisplayBuffer[0]);
                 }
                 break;

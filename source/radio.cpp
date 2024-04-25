@@ -47,7 +47,6 @@ void RADIO_repeat(uint8_t *data, uint8_t length);
  */
 void messageReceived(uint gpio, uint32_t events) {
     packetWaiting = true;
-    LED_Ring_set_mode(LED_MODE_BLINK);
 }
 
 
@@ -70,22 +69,28 @@ void handleMessage(){
         
         rxFrom_id = packet.data[PACKET_IDX_OWNER];
 
-        if(rxFrom_id == frackstock.id || packet.data[PACKET_IDX_REPEATER_1] == frackstock.id || packet.data[PACKET_IDX_REPEATER_2] == frackstock.id){
+        // Check if packet is from this device
+        if(packet.data[PACKET_IDX_OWNER] == frackstock.id || packet.data[PACKET_IDX_REPEATER_1] == frackstock.id || packet.data[PACKET_IDX_REPEATER_2] == frackstock.id){
+            printf("[RF] RX: packet from self\n");
+            gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
+            return;
+        }
+
+        // Check if packet is for this device
+        if(packet.data[PACKET_IDX_TARGET] != BROADCAST_ADDRESS && packet.data[PACKET_IDX_TARGET] != frackstock.id){
+            printf("[RF] RX: packet not for self\n");
             gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
             return;
         }
 
         SEG_set_mode(SEG_MODE_CUSTOM);
         SEG_write_number_hex(rxFrom_id);  
+        LED_Ring_set_color(packet.data[PACKET_IDX_COLOR_R], packet.data[PACKET_IDX_COLOR_G], packet.data[PACKET_IDX_COLOR_B]);
         LED_Ring_set_mode(LED_MODE_WALK);
 
         // Check if packet needs to be repeated
         if(packet.data[PACKET_IDX_TTL] > 0) {
-            if(packet.data[PACKET_IDX_OWNER] != frackstock.id){
-                if(packet.data[PACKET_IDX_REPEATER_1] != frackstock.id && packet.data[PACKET_IDX_REPEATER_2] != frackstock.id){
-                    RADIO_repeat(packet.data, packet.length);
-                }
-            }
+            RADIO_repeat(packet.data, packet.length);
         }
     
     }
@@ -159,6 +164,9 @@ void RADIO_send() {
     packet.data[PACKET_IDX_REPEATER_1] = 0;
     packet.data[PACKET_IDX_REPEATER_2] = 0;
     packet.data[PACKET_IDX_BEER] = frackstock.beer;
+    packet.data[PACKET_IDX_COLOR_R] = frackstock.color[0];
+    packet.data[PACKET_IDX_COLOR_G] = frackstock.color[1];
+    packet.data[PACKET_IDX_COLOR_B] = frackstock.color[2];
 
     radio.sendData(packet);
 
