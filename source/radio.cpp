@@ -67,12 +67,17 @@ void handleMessage(){
     {
         sprintf((char *)serBuffer, "packet: len %d", packet.length);
         printf("[RF] RX: %s\n", serBuffer);
+        
+        rxFrom_id = packet.data[PACKET_IDX_OWNER];
+
+        if(rxFrom_id == frackstock.id || packet.data[PACKET_IDX_REPEATER_1] == frackstock.id || packet.data[PACKET_IDX_REPEATER_2] == frackstock.id){
+            gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
+            return;
+        }
 
         SEG_set_mode(SEG_MODE_CUSTOM);
-        LED_Ring_set_mode(LED_MODE_WALK);
-
-        rxFrom_id = packet.data[PACKET_IDX_OWNER];
         SEG_write_number_hex(rxFrom_id);  
+        LED_Ring_set_mode(LED_MODE_WALK);
 
         // Check if packet needs to be repeated
         if(packet.data[PACKET_IDX_TTL] > 0) {

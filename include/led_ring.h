@@ -54,6 +54,12 @@ enum eSEG_MODE {
     SEG_MODE_CUSTOM,
     SEG_MODE_BEER_DEC,
     SEG_MODE_BEER_HEX,
+    SEG_MODE_BUFFER
+};
+
+enum eSEG_NUMBER_MODE {
+    SEG_NUMBER_MODE_DEC = 0,
+    SEG_NUMBER_MODE_HEX
 };
 
 // Global variables
@@ -67,7 +73,7 @@ void LED_Ring_Tick();
 void LED_Ring_set_color(uint8_t r, uint8_t g, uint8_t b);
 void LED_Ring_set_mode(eLED_MODE mode);
 void SEG_set_mode(eSEG_MODE mode);
-
+int SEG_add_to_buffer(uint8_t number, eSEG_NUMBER_MODE mode);
 void SEG_Tick();
 
 int PCA9552_init();

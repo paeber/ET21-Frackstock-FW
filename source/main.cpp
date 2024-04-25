@@ -68,6 +68,10 @@ int main() {
 
     printf("Init done\n");
 
+    SEG_add_to_buffer(VERSION_MAJOR << 4 | VERSION_MINOR, SEG_NUMBER_MODE_HEX);
+    SEG_add_to_buffer(frackstock.id, SEG_NUMBER_MODE_HEX);
+    SEG_set_mode(SEG_MODE_BUFFER);
+
     // Enable the watchdog, requiring the watchdog to be updated every 1000ms or the chip will reboot
     watchdog_enable(1000, 1);
 

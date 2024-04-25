@@ -32,6 +32,7 @@
 #define SEG_I2C_FREQ    (100 * 1000)
 #define SEG_SDA_PIN     26
 #define SEG_SCL_PIN     27
+#define SEG_DISPLAY_BUFFER_LENGTH 10
 
 #define PCA_ADDR        0x60
 #define PCA_AI_FLAG     0x10
@@ -60,6 +61,10 @@ uint16_t led_off_delay_cnt = LED_DEFAULT_ON_TIME;
 uint16_t seg_off_delay_cnt = SEG_DEFAULT_ON_TIME;
 bool LED_Ring_initialized = false;
 
+uint8_t SEG_DisplayBuffer[SEG_DISPLAY_BUFFER_LENGTH];
+eSEG_NUMBER_MODE SEG_DisplayBufferMode[SEG_DISPLAY_BUFFER_LENGTH];
+uint8_t SEG_DisplayBufferPending = 0;
+
 const uint8_t seg_order_digit[2][8] = {
     {1, 0, 6, 5, 4, 2, 3, 7},
     {13, 12, 10, 9, 8, 14, 15, 11}
@@ -85,6 +90,23 @@ const uint8_t segment_digit_8[17] = {
     0b00000000 // blank
 };
 
+
+/**
+ * Adds a number and its corresponding hex value to the display buffer.
+ *
+ * @param number The number to be added to the display buffer.
+ * @param hex If != 0 the number will be displayed as hex.
+ * @return 0 if the number was successfully added to the buffer, -1 if the buffer is full.
+ */
+int SEG_add_to_buffer(uint8_t number, eSEG_NUMBER_MODE mode){
+    if(SEG_DisplayBufferPending >= SEG_DISPLAY_BUFFER_LENGTH){
+        return -1;
+    }
+    SEG_DisplayBuffer[SEG_DisplayBufferPending] = number;
+    SEG_DisplayBufferMode[SEG_DisplayBufferPending] = mode;
+    SEG_DisplayBufferPending++;
+    return 0;
+}
 
 /**
  * Writes a number to the LED segment display.
@@ -427,6 +449,19 @@ void SEG_Tick(){
 
     if(seg_off_delay_cnt > 0){
         seg_off_delay_cnt--;
+    } else if(activeSEG_MODE == SEG_MODE_CUSTOM && SEG_DisplayBufferPending > 0){
+        SEG_set_mode(SEG_MODE_BUFFER);
+    } else if (activeSEG_MODE == SEG_MODE_BUFFER){
+        if (SEG_DisplayBufferPending > 1){
+            SEG_DisplayBufferPending--;
+            for(int i=0; i<SEG_DISPLAY_BUFFER_LENGTH -1; i++){
+                SEG_DisplayBuffer[i] = SEG_DisplayBuffer[i+1];
+                SEG_DisplayBufferMode[i] = SEG_DisplayBufferMode[i+1];
+            }
+            seg_off_delay_cnt = SEG_DEFAULT_ON_TIME;
+        } else {
+            activeSEG_MODE = SEG_MODE_OFF;
+        }
     } else {
         activeSEG_MODE = SEG_MODE_OFF;
     }
@@ -439,7 +474,6 @@ void SEG_Tick(){
                 break;
             
             case SEG_MODE_ON:
-                SEG_write_number(number / 10);
                 break;
             
             case SEG_MODE_CUSTOM:
@@ -451,6 +485,14 @@ void SEG_Tick(){
 
             case SEG_MODE_BEER_HEX:
                 SEG_write_number_hex(FRACK_get_beer());
+                break;
+
+            case SEG_MODE_BUFFER:
+                if(SEG_DisplayBufferMode[0] == SEG_NUMBER_MODE_DEC){
+                    SEG_write_number(SEG_DisplayBuffer[0]);
+                } else {
+                    SEG_write_number_hex(SEG_DisplayBuffer[0]);
+                }
                 break;
 
         }
