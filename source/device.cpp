@@ -54,6 +54,18 @@ void DEV_reset_mcu() {
     while (1){}; // Wait for reset by watchdog
 }
 
+
+/**
+ * @brief Retrieves the unique ID of the device.
+ *
+ * This function calls the `flash_get_unique_id` function to retrieve the unique ID of the device.
+ *
+ * @param unique_id Pointer to an array where the unique ID will be stored.
+ */
+void DEV_get_unique_id(uint8_t *unique_id) {
+    flash_get_unique_id(unique_id);
+}
+
 /**
  * @brief Initializes the device.
  * 
@@ -72,7 +84,7 @@ void DEV_reset_mcu() {
 int DEV_init() {
     uint8_t write_data[FLASH_PAGE_SIZE];
     uint8_t unique_id[8];
-    flash_get_unique_id(unique_id);
+    DEV_get_unique_id(unique_id);
 
     printf("Unique ID: ");
     print_buf(unique_id, 8);
@@ -94,12 +106,14 @@ int DEV_init() {
         if(flash_target_contents[IDX_VERSION] == 0xff) {
             printf("First time flashing...\n");
             write_data[IDX_VERSION] = VERSION_MAJOR << 4 | VERSION_MINOR;
+            write_data[IDX_FRACK_ID] = unique_id[7];
             write_data[IDX_BEER] = 0;
             write_data[IDX_FLASH_CNT] = 1;
             memcpy(write_data + IDX_ABREV, DEF_ABREV, LEN_ABREV);
             memcpy(write_data + IDX_COLOR, "\x00\xff\x00", LEN_COLOR);
         } else {
             write_data[IDX_VERSION] = VERSION_MAJOR << 4 | VERSION_MINOR;
+            write_data[IDX_FRACK_ID] = flash_target_contents[IDX_FRACK_ID];
             write_data[IDX_BEER] = flash_target_contents[IDX_BEER];
             write_data[IDX_FLASH_CNT] = flash_target_contents[IDX_FLASH_CNT] + 1;
             memcpy(write_data + IDX_ABREV, flash_target_contents + IDX_ABREV, LEN_ABREV);
@@ -145,10 +159,7 @@ int DEV_init() {
  * @param frackstock Pointer to the tFrackStock structure where the frack data will be stored.
  */
 void DEV_get_frack_data(tFrackStock *frackstock) {
-    uint8_t unique_id[8];
-    flash_get_unique_id(unique_id);
-
-    frackstock->id = unique_id[7];
+    frackstock->id = flash_target_contents[IDX_FRACK_ID];
     frackstock->beer = flash_target_contents[IDX_BEER];
     memcpy(frackstock->abrev, flash_target_contents + IDX_ABREV, LEN_ABREV);
     memcpy(frackstock->color, flash_target_contents + IDX_COLOR, LEN_COLOR);
@@ -171,7 +182,8 @@ void DEV_set_frack_data(tFrackStock *frackstock){
     }
 
     // Prepare data to write
-    write_data[IDX_VERSION] = VERSION_MAJOR << 4 | VERSION_MINOR;   
+    write_data[IDX_VERSION] = VERSION_MAJOR << 4 | VERSION_MINOR;  
+    write_data[IDX_FRACK_ID] = frackstock->id; 
     write_data[IDX_BEER] = frackstock->beer;
     memcpy(write_data + IDX_ABREV, frackstock->abrev, LEN_ABREV);
     memcpy(write_data + IDX_COLOR, frackstock->color, LEN_COLOR);

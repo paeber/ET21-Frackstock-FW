@@ -53,6 +53,7 @@ void SERIAL_handle(){
         printf("Available commands:\n");
         printf("help - Display this help\n");
         printf("status - Display the current status\n");
+        printf("unique - Display the unique ID\n");
         printf("reset - Reset the device\n");
         printf("set abrev - Set a new abreviation\n");
         printf("set beer - Set the amount of beer\n");
@@ -89,6 +90,13 @@ void SERIAL_handle(){
         printf("Changes applied\n");
     } else if(strcmp((char *)buffer, "reset") == 0){
         DEV_reset_mcu();
+    } else if(strcmp((char *)buffer, "unique") == 0){
+        uint8_t unique_id[8];
+        DEV_get_unique_id(unique_id);
+        printf("%02X %02X %02X %02X %02X %02X %02X %02X\n", unique_id[0], unique_id[1], unique_id[2], unique_id[3], unique_id[4], unique_id[5], unique_id[6], unique_id[7]);
+    } else if(strncmp((char *)buffer, "set id ", 7) == 0){
+        frackstock.id = atoi((char *)buffer+7);
+        printf("New ID set\n");
     } else if(strcmp((char *)buffer, "bootloader") == 0){
         DEV_enter_bootloader();
     } else {

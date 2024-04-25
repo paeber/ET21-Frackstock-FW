@@ -78,7 +78,7 @@ int main() {
     while (1) {
         
         // Send some data
-        if(cnt % 3000 == 1000){
+        if(cnt % 2000 == 1000){
             RADIO_send();
             LED_Ring_set_color(frackstock.color[0], frackstock.color[1], frackstock.color[2]);
             LED_Ring_set_mode(LED_MODE_FILL_CIRCLE);
