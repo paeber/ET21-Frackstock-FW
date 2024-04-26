@@ -52,7 +52,7 @@ try:
 
     time.sleep(0.5)
 
-    color_cmd = f"set color {color[0]:<3} {color[1]:<3} {color[2]:<3}\n"
+    color_cmd = f"set color ({color[0]},{color[1]},{color[2]})\n"
     ser.write(color_cmd.encode("utf-8"))
 
     time.sleep(0.5)

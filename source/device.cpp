@@ -14,6 +14,9 @@
 #include "hardware/flash.h"
 #include "hardware/sync.h"
 
+#include "pico/bootrom.h"
+#include "class/cdc/cdc_device.h"
+
 
 // Defines
 #define FLASH_TARGET_OFFSET     (uint32_t)(256 * 1024)
@@ -84,6 +87,10 @@ void DEV_get_unique_id(uint8_t *unique_id) {
 int DEV_init() {
     uint8_t write_data[FLASH_PAGE_SIZE];
     uint8_t unique_id[8];
+
+    // necessary to make things reflashable
+    tud_cdc_set_wanted_char('\0');
+
     DEV_get_unique_id(unique_id);
 
     printf("Unique ID: ");
@@ -203,4 +210,5 @@ void DEV_enter_bootloader() {
     // Set the magic value to reboot to the bootloader
     //flash_range_program(FLASH_TARGET_OFFSET + 0x10, (const uint8_t *)"\x01\x23\x45\x67\x89\xAB\xCD\xEF", 8);
     //DEV_reset_mcu();
+    reset_usb_boot(0, 0);
 }
