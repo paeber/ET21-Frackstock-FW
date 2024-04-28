@@ -462,13 +462,14 @@ void LED_Ring_Tick(){
             break;
         
         case LED_MODE_FILL_CIRCLE:
-            ledStrip.setPixelColor((tick / 4) % LED_RING_COUNT, ledColor);
+            ledStrip.setPixelColor((tick / 3) % LED_RING_COUNT, ledColor);
             break;
     }
 
     ledStrip.show();
 
     tick++;
+    tick %= 12*21;
 }
 
 void SEG_Tick(){

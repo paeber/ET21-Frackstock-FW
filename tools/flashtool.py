@@ -42,7 +42,8 @@ def flash_firmware(firmware):
                 if name == "RPI-RP2":
                     pi_drive = letter
                     break
-
+            if pi_drive is not None:
+                break
             time.sleep(1)
 
         if pi_drive is None:
