@@ -7,6 +7,7 @@ import serial.tools.list_ports
 import time
 import sys, os
 import json
+import csv
 
 run = True
 used_ports = []
@@ -14,12 +15,13 @@ used_ports = []
 # Set working directory
 os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
-def flash_firmware():
-    firmware = "../build/Frackstock.uf2"
+deviceListFile = "device_list.csv"
+firmware = "../build/Frackstock.uf2"
 
+def flash_firmware():
     # Check if the firmware file exists
     if not os.path.exists(firmware):
-        print("Firmware file not found")
+        print("[WARNING] Firmware file not found")
         exit(1)
 
     # Check if drive called RPI-RP2 is mounted
@@ -28,43 +30,63 @@ def flash_firmware():
         # Wait for the drive to be mounted
         while not os.path.exists("/Volumes/RPI-RP2"):
             print(".", end="")
-            time.sleep(1)
+            time.sleep(.5)
+        print("Drive mounted")
+
+        time.sleep(1)
 
         # Copy the firmware file to the drive
         os.system(f"cp {firmware} /Volumes/RPI-RP2")
-        print("Firmware copied")
+        print("[INFO] Firmware copied")
 
+
+
+# check if device list file exists
+if not os.path.exists(deviceListFile):
+    print("Device list file not found")
+    # Create a new file
+    with open(deviceListFile, mode='w') as file:
+        writer = csv.writer(file)
+        writer.writerow(["Pos", "Unique ID", "Version", "ID", "Color", "Abreviation"])
+
+# Read the device list file
+with open(deviceListFile, mode='r') as file:
+    reader = csv.reader(file)
+    data = list(reader)
 
 
 while run:
-    # List available ports
-    ports = serial.tools.list_ports.comports()
     pico_port = None
-    for port, desc, hwid in sorted(ports):
-        #print(f"{port} {desc} {hwid}")
-        if("Pico" in str(desc)):
-            pico_port = port
-            break
 
-    if pico_port is None:
-        pass #print("[ERROR] Pico not found")
+    while pico_port is None:
+        # List available ports
+        ports = serial.tools.list_ports.comports()
+        
+        for port, desc, hwid in sorted(ports):
+            #print(f"{port} {desc} {hwid}")
+            if("Pico" in str(desc)):
+                pico_port = port
+                break
 
-    elif pico_port in used_ports:
-        pass #print("[ERROR] Pico at {pico_port} already handled")
+        if pico_port in used_ports:
+            pico_port = None #print("[ERROR] Pico at {pico_port} already handled")
 
-    else:
+        print(".", end="")
+        time.sleep(1)
+
+    if pico_port is not None:
+        print("\n[INFO] Pico found at: ", pico_port)
         used_ports.append(pico_port)
-        print("[INFO] Access Port: ", pico_port)
 
         ser = serial.Serial(pico_port, 115200, timeout=1, rtscts=True)
 
         try:
-            time.sleep(1)
-
-            for i in range(10):
-                ser.reset_input_buffer()
-                ser.flush()
-                time.sleep(0.5)
+            time.sleep(0.2)
+            ser.write(b"serial 0\n") # Disable serial output
+            time.sleep(0.2)
+            ser.reset_input_buffer()
+            ser.flush()
+            time.sleep(0.2)
 
             # get unique ID
             ser.write(b"unique\n")
@@ -80,6 +102,31 @@ while run:
             status = json.loads(status)
             print("[INFO] Current configuration: ", status)
 
+            # Check if the device is already in the list
+            found = False
+            for row in data:
+                if unique_id.decode("utf-8").strip() in row:
+                    found = True
+                    break
+
+            if not found:
+                data.append([len(data), unique_id.decode("utf-8").strip(), status["v"], status["id"], status["color"], status["abrev"]])
+            else:
+                # Update the information
+                for row in data:
+                    if unique_id.decode("utf-8").strip() in row:
+                        row[2] = status["v"]
+                        row[3] = status["id"]
+                        row[4] = status["color"]
+                        row[5] = status["abrev"]
+                        break
+            
+            # Write the updated data to the file
+            with open(deviceListFile, mode='w') as file:
+                writer = csv.writer(file)
+                writer.writerows(data)
+                
+
             # Update firmware
             ser.write(b"bootloader\n")
             time.sleep(0.2)
@@ -87,7 +134,7 @@ while run:
 
             flash_firmware()
 
-
+            pico_port = None
 
         except Exception as e:
             print("[ERROR] ", e)
@@ -96,8 +143,5 @@ while run:
             print("[INFO] Exiting")
             run = False
 
-        finally:
-            if ser.is_open:
-                ser.close()
-            print("[INFO] Port closed")
+    time.sleep(1)
 
