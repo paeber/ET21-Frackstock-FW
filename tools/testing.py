@@ -9,6 +9,8 @@ import sys, os
 import json
 import csv
 
+from flashtool import flash_firmware
+
 run = True
 used_ports = []
 
@@ -17,28 +19,6 @@ os.chdir(os.path.dirname(os.path.realpath(__file__)))
 
 deviceListFile = "device_list.csv"
 firmware = "../build/Frackstock.uf2"
-
-def flash_firmware():
-    # Check if the firmware file exists
-    if not os.path.exists(firmware):
-        print("[WARNING] Firmware file not found")
-        exit(1)
-
-    # Check if drive called RPI-RP2 is mounted
-    if sys.platform == "darwin":
-        
-        # Wait for the drive to be mounted
-        while not os.path.exists("/Volumes/RPI-RP2"):
-            print(".", end="")
-            time.sleep(.5)
-        print("Drive mounted")
-
-        time.sleep(1)
-
-        # Copy the firmware file to the drive
-        os.system(f"cp {firmware} /Volumes/RPI-RP2")
-        print("[INFO] Firmware copied")
-
 
 
 # check if device list file exists
@@ -55,6 +35,14 @@ with open(deviceListFile, mode='r') as file:
     data = list(reader)
 
 
+if sys.platform == "win32":
+    input("Unplug all Pico devices and press Enter to continue...")
+    ports = serial.tools.list_ports.comports()
+    for port, desc, hwid in sorted(ports):
+        print(f"Forget: {port} {desc} {hwid}")
+        used_ports.append(port)
+
+print("[INFO] Waiting for pico's...")
 while run:
     pico_port = None
 
@@ -63,10 +51,14 @@ while run:
         ports = serial.tools.list_ports.comports()
         
         for port, desc, hwid in sorted(ports):
-            #print(f"{port} {desc} {hwid}")
+            print(f"{port} {desc} {hwid}")
             if("Pico" in str(desc)):
                 pico_port = port
                 break
+            if(sys.platform == "win32"):
+                if port not in used_ports:
+                    pico_port = port
+                    break
 
         if pico_port in used_ports:
             pico_port = None #print("[ERROR] Pico at {pico_port} already handled")
@@ -92,7 +84,8 @@ while run:
             ser.write(b"unique\n")
             time.sleep(0.2)
             unique_id = ser.readline()
-            print("[INFO] Unique ID: ", unique_id.decode("utf-8").strip())
+            uinque_id = unique_id.decode("utf-8").strip()
+            print("[INFO] Unique ID: ", unique_id)
 
             # get current configuration
             ser.write(b"status\n")
@@ -105,12 +98,12 @@ while run:
             # Check if the device is already in the list
             found = False
             for row in data:
-                if unique_id.decode("utf-8").strip() in row:
+                if unique_id in row:
                     found = True
                     break
 
             if not found:
-                data.append([len(data), unique_id.decode("utf-8").strip(), status["v"], status["id"], status["color"], status["abrev"]])
+                data.append([len(data), unique_id, status["v"], status["id"], status["color"], status["abrev"]])
             else:
                 # Update the information
                 for row in data:
@@ -132,7 +125,10 @@ while run:
             time.sleep(0.2)
             ser.close()
 
-            flash_firmware()
+            if(flash_firmware(firmware)):
+                print("[ERROR] Flashing failed")
+            else:
+                print("[INFO] Flashing successful")
 
             pico_port = None
 
