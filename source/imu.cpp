@@ -18,6 +18,7 @@
 #include "hardware/gpio.h"
 
 #include "led_ring.h"
+#include "serial.h"
 
 
 // Function prototypes
@@ -46,13 +47,13 @@ bool IMU_INT2_flag = false;
  * @param events The events that triggered the interrupt.
  */
 void IMU_INT_irq(uint gpio, uint32_t events) {
-    printf("IMU INT IRQ\n");
+    SERIAL_printf("IMU INT IRQ\n");
     if(gpio == IMU_INT1){
         IMU_INT1_flag = true;
-        printf("->IMU INT1\n");
+        SERIAL_printf("->IMU INT1\n");
     } else if(gpio == IMU_INT2){
         IMU_INT2_flag = true;
-        printf("->IMU INT2\n");
+        SERIAL_printf("->IMU INT2\n");
     }
 
 }
@@ -68,25 +69,25 @@ void IMU_INT1_handle(){
     uint16_t interrupt, data;
     IMU_INT1_flag = false;
     BMI_get_reg(BMI323_INT_STATUS_INT1, &interrupt, 1);
-    printf("IMU INT1: 0x%04X\n", interrupt);
+    SERIAL_printf("IMU INT1: 0x%04X\n", interrupt);
 
     // Check for tap detection
     if(interrupt & (0x1 << 8)){
-        printf("Tap detected\n");
+        SERIAL_printf("Tap detected\n");
 
         BMI_get_reg(BMI323_FEATURE_EVENT_EXT, &data, 1);
 
         if(data & SINGLE_TAP_DETECT){
-            printf("Single tap detected\n");
+            SERIAL_printf("Single tap detected\n");
             LED_Ring_set_mode(LED_MODE_RAINBOW);
         } else if(data & DOUBLE_TAP_DETECT){
-            printf("Double tap detected\n");
+            SERIAL_printf("Double tap detected\n");
             LED_Ring_set_mode(LED_MODE_FADE);
         } else if(data & TRIPPLE_TAP_DETECT){
-            printf("Tripple tap detected\n");
+            SERIAL_printf("Tripple tap detected\n");
             LED_Ring_set_mode(LED_MODE_ON);
         } else {
-            printf("Unknown detected: 0x%04X\n", data);
+            SERIAL_printf("Unknown detected: 0x%04X\n", data);
         }
     }
 }
@@ -103,11 +104,11 @@ void IMU_INT2_handle(){
     uint16_t interrupt;
     IMU_INT2_flag = false;
     BMI_get_reg(BMI323_INT_STATUS_INT2, &interrupt, 1);
-    printf("IMU INT2: 0x%04X\n", interrupt);
+    SERIAL_printf("IMU INT2: 0x%04X\n", interrupt);
 
     // Check for tap detection
     if(interrupt & (0x1 << 8)){
-        printf("Tap detected\n");
+        SERIAL_printf("Tap detected\n");
 
     }
 }
@@ -166,20 +167,20 @@ void IMU_init(){
 
     // Read the chip ID
     BMI_get_reg(BMI323_CHIP_ID, data_in, 1);
-    printf("Chip ID: 0x%04X\n", data_in[0]);
+    SERIAL_printf("Chip ID: 0x%04X\n", data_in[0]);
 
     // Read the error register
     BMI_get_reg(BMI323_ERR_REG, data_in, 1);
-    printf("Error register: 0x%04X\n", data_in[0]);
+    SERIAL_printf("Error register: 0x%04X\n", data_in[0]);
     if(data_in[0] & 0x0001) {
-        printf("IMU Power Error\n");
+        SERIAL_printf("IMU Power Error\n");
     }
 
     // Read the status register
     BMI_get_reg(BMI323_STATUS, data_in, 1);
-    printf("Status register: 0x%02X\n", data_in[0]);
+    SERIAL_printf("Status register: 0x%02X\n", data_in[0]);
     if(data_in[0] & 0x1) {
-        printf("IMU OK\n");
+        SERIAL_printf("IMU OK\n");
     }
 
     // 
@@ -202,9 +203,9 @@ void IMU_init(){
         }
     }
     if((config & 0x0f) == 0x01){
-        printf("\nFeature engine enabled\n");
+        SERIAL_printf("\nFeature engine enabled\n");
     } else {
-        printf("\nFeature engine not enabled\n");
+        SERIAL_printf("\nFeature engine not enabled\n");
     }
 
     // 
@@ -223,7 +224,7 @@ void IMU_init(){
 
     sleep_ms(10);
     BMI_get_reg(BMI323_ACC_CONF, &config, 1);
-    printf("ACC_CONF: 0x%04X\n", config);
+    SERIAL_printf("ACC_CONF: 0x%04X\n", config);
 
     // Enable the gyroscope
     uint16_t gyr_conf = 0x0000; // Default value
@@ -237,7 +238,7 @@ void IMU_init(){
 
     sleep_ms(10);
     BMI_get_reg(BMI323_GYR_CONF, &config, 1);
-    printf("GYR_CONF: 0x%04X\n", config);
+    SERIAL_printf("GYR_CONF: 0x%04X\n", config);
 
     
     //
@@ -273,7 +274,7 @@ void IMU_init(){
 
     sleep_ms(10);
     BMI_get_reg(BMI323_FEATURE_IO0, &config, 1);
-    printf("FEATURE_IO0: 0x%04X\n", config);
+    SERIAL_printf("FEATURE_IO0: 0x%04X\n", config);
     
 
     //
@@ -285,7 +286,7 @@ void IMU_init(){
     BMI_set_reg(BMI323_INT_MAP2, &config, 1);
 
     BMI_get_reg(BMI323_INT_MAP2, &config, 1);
-    printf("INT_MAP2: 0x%04X\n", config);
+    SERIAL_printf("INT_MAP2: 0x%04X\n", config);
 
     config = 0x0000;
     config |= (0b0 << 0);   // INT1 active low
@@ -297,7 +298,7 @@ void IMU_init(){
     BMI_set_reg(BMI323_IO_INT_CTRL, &config, 1);
 
     BMI_get_reg(BMI323_IO_INT_CTRL, &config, 1);
-    printf("IO_INT_CTRL: 0x%04X\n", config);
+    SERIAL_printf("IO_INT_CTRL: 0x%04X\n", config);
 
     // Set up the interrupt
     gpio_set_irq_enabled_with_callback(IMU_INT1, GPIO_IRQ_EDGE_FALL, true, &IMU_INT_irq);
@@ -330,7 +331,7 @@ void IMU_Tick(){
 
     BMI_get_reg(BMI323_FEATURE_IO1, &data, 1);
     if(data & 0x0f == 0){
-        printf("Feature engine not ready\n");
+        SERIAL_printf("Feature engine not ready\n");
     }
 
     BMI_get_reg(BMI323_INT_STATUS_INT1, &data, 1);
@@ -339,16 +340,16 @@ void IMU_Tick(){
     if(data & (0x1 << 8)){
         BMI_get_reg(BMI323_FEATURE_EVENT_EXT, &data, 1);
         if(data & SINGLE_TAP_DETECT){
-            printf("TICK: Single tap detected\n");
+            SERIAL_printf("TICK: Single tap detected\n");
             LED_Ring_set_mode(LED_MODE_RAINBOW);
         } else if(data & DOUBLE_TAP_DETECT){
-            printf("TICK: Double tap detected\n");
+            SERIAL_printf("TICK: Double tap detected\n");
             LED_Ring_set_mode(LED_MODE_FADE);
         } else if(data & TRIPPLE_TAP_DETECT){
-            printf("TICK: Tripple tap detected\n");
+            SERIAL_printf("TICK: Tripple tap detected\n");
             LED_Ring_set_mode(LED_MODE_ON);
         } else {
-            printf("TICK: Unknown detected: 0x%04X\n", data);
+            SERIAL_printf("TICK: Unknown detected: 0x%04X\n", data);
         }
     }
 

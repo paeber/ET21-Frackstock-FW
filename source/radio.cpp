@@ -15,10 +15,9 @@
 #include "ccpacket.h"
 
 #include "led_ring.h"
-
+#include "serial.h"
 #include "string.h"
 
-#define PRINT_MESSAGE
 
 // Global variables
 CC1101 radio(RADIO_SPI_CS, RADIO_GDO1, RADIO_SPI_MISO);
@@ -57,28 +56,28 @@ void handleMessage(){
   if (radio.receiveData(&packet) > 0){
     if (!packet.crc_ok)
     {
-        printf("[RF] crc not ok\n");
+        SERIAL_printf("[RF] crc not ok\n");
     }
     sprintf((char *)serBuffer, "lqi: %d, rssi: %d dBm", 0x3f - packet.lqi, RADIO_get_rssi(packet.rssi));
-    printf("[RF] RX: %s\n", serBuffer);
+    SERIAL_printf("[RF] RX: %s\n", serBuffer);
 
     if (packet.crc_ok && packet.length > 0)
     {
         sprintf((char *)serBuffer, "packet: len %d", packet.length);
-        printf("[RF] RX: %s\n", serBuffer);
+        SERIAL_printf("[RF] RX: %s\n", serBuffer);
         
         rxFrom_id = packet.data[PACKET_IDX_OWNER];
 
         // Check if packet is from this device
         if(packet.data[PACKET_IDX_OWNER] == frackstock.id || packet.data[PACKET_IDX_REPEATER_1] == frackstock.id || packet.data[PACKET_IDX_REPEATER_2] == frackstock.id){
-            printf("[RF] RX: packet from self\n");
+            SERIAL_printf("[RF] RX: packet from self\n");
             gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
             return;
         }
 
         // Check if packet is for this device
         if(packet.data[PACKET_IDX_TARGET] != BROADCAST_ADDRESS && packet.data[PACKET_IDX_TARGET] != frackstock.id){
-            printf("[RF] RX: packet not for self\n");
+            SERIAL_printf("[RF] RX: packet not for self\n");
             gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
             return;
         }

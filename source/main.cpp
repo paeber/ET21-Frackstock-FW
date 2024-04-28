@@ -35,17 +35,17 @@ int main() {
     SERIAL_init();
 
     if (watchdog_caused_reboot()) {
-        printf("Rebooted by Watchdog!\n");
+        SERIAL_printf("Rebooted by Watchdog!\n");
     } else {
-        printf("Clean boot\n");
+        SERIAL_printf("Clean boot\n");
     }
 
     // Print the version
-    printf("Frackstock v%d.%d\n", VERSION_MAJOR, VERSION_MINOR);
+    SERIAL_printf("Frackstock v%d.%d\n", VERSION_MAJOR, VERSION_MINOR);
 
     // Initialize device
     if(DEV_init()) {
-        printf("Device init failed\n");
+        SERIAL_printf("Device init failed\n");
     }
 
     // Initialize the GPIO pin
@@ -63,10 +63,10 @@ int main() {
 
     // Initialize the LED Ring
     if(LED_Ring_init() != 0) {
-        printf("LED Ring init failed\n");
+        SERIAL_printf("LED Ring init failed\n");
     }
 
-    printf("Init done\n");
+    SERIAL_printf("Init done\n");
 
     SEG_add_to_buffer(VERSION_MAJOR << 4 | VERSION_MINOR, SEG_NUMBER_MODE_HEX);
     SEG_add_to_buffer(frackstock.id, SEG_NUMBER_MODE_HEX);

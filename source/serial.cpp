@@ -14,12 +14,12 @@
 
 #include <stdio.h>
 #include <string.h>
-
-
+#include <stdarg.h>
 
 // Defines
 
 // Global variables
+uint8_t messagesEnabled = SERIAL_MESSAGES_ENABLED;
 uint8_t userInput = 0;
 uint8_t buffer[256];
 
@@ -31,6 +31,19 @@ void SERIAL_init() {
     stdio_init_all();
 }
 
+
+void SERIAL_EnableMessages(uint8_t enable) {
+    messagesEnabled = enable;
+}
+
+void SERIAL_printf(const char *format, ...) {
+    if(messagesEnabled == SERIAL_MESSAGES_ENABLED){
+        va_list args;
+        va_start(args, format);
+        vprintf(format, args);
+        va_end(args);
+    }
+}
 
 void SERIAL_Tick() {
     int c = getchar_timeout_us(0);
@@ -55,6 +68,7 @@ void SERIAL_handle(){
         printf("status - Display the current status\n");
         printf("unique - Display the unique ID\n");
         printf("reset - Reset the device\n");
+        printf("serial - Enable/Disable serial messages\n");
         printf("set abrev - Set a new abreviation\n");
         printf("set beer - Set the amount of beer\n");
         printf("reset beer - Reset the amount of beer\n");
@@ -99,6 +113,15 @@ void SERIAL_handle(){
         printf("New ID set\n");
     } else if(strcmp((char *)buffer, "bootloader") == 0){
         DEV_enter_bootloader();
+    } else if(strncmp((char *)buffer, "serial", 6) == 0){
+        uint8_t enable = atoi((char *)buffer+7);
+        if(enable == 0){
+            SERIAL_EnableMessages(SERIAL_MESSAGES_DISABLED);
+            printf("Serial messages disabled\n");
+        } else {
+            SERIAL_EnableMessages(SERIAL_MESSAGES_ENABLED);
+            printf("Serial messages enabled\n");
+        }
     } else {
         printf("Unknown command\n");
     }
