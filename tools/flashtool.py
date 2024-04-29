@@ -65,8 +65,14 @@ def flash_firmware(firmware):
 
     
 if __name__ == "__main__":
-
-    firmware = "../build/Frackstock.uf2"
-    flash_firmware(firmware)
     
+    firmware = "../build/Frackstock.uf2"
+    try:
+        while True:
+            flash_firmware(firmware)
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Exiting...")
+        sys.exit(0)
+
 
