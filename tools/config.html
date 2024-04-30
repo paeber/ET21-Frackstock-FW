@@ -46,7 +46,12 @@
                         <h5 class="card-title">Device Info</h5>
                         <button id="getStatus" class="btn btn-primary" disabled>Refresh</button>
                     </div>
-                    <div id="deviceInfo"></div>
+                    <div id="deviceInfo">
+                        <table style="width: 80%">
+                            <th>Version</th><th>ID</th><th>Beer</th><th>Color</th><th>Abreviation</th>
+                            <tr><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                        </table>
+                    </div>
                 </div>
             </div>
             <div class="card mb-3">
@@ -144,12 +149,9 @@
                 let statusObj = JSON.parse(status);
                 // Zeigen Sie die analysierten Daten in der deviceInfo div an
                 document.getElementById('deviceInfo').innerHTML = `
-                    <table>
-                        <tr><td>Version:</td><td>${statusObj.v}</td></tr>
-                        <tr><td>ID:</td><td>${statusObj.id}</td></tr>
-                        <tr><td>Beer:</td><td>${statusObj.beer}</td></tr>
-                        <tr><td>Color:</td><td>${statusObj.color}</td></tr>
-                        <tr><td>Abreviation:</td><td>${statusObj.abrev}</td></tr>
+                    <table style="width: 80%">
+                        <th>Version</th><th>ID</th><th>Beer</th><th>Color</th><th>Abreviation</th>
+                        <tr><td>${statusObj.v}</td><td>${statusObj.id.toString()}</td><td>${statusObj.beer}</td><td>${statusObj.color}</td><td>${statusObj.abrev}</td>
                     </table>
                 `;
             } catch (e) {

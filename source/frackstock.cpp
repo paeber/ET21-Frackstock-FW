@@ -25,6 +25,7 @@ void FRACK_init() {
 
 void FRACK_inc_beer() {
     frackstock.beer++;
+    DEV_set_frack_data(&frackstock);
 }
 
 

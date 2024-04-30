@@ -57,6 +57,7 @@ eLED_MODE activeLED_MODE = LED_MODE_OFF;
 PicoLed::Color ledColor = PicoLed::RGB(209, 134, 0);
 PicoLed::PicoLedController ledStrip = PicoLed::addLeds<PicoLed::WS2812B>(pio0, 0, LED_RING_PIN, LED_RING_COUNT, PicoLed::FORMAT_GRB);
 
+static uint16_t led_tick_cnt = 0;
 uint16_t led_off_delay_cnt = LED_DEFAULT_ON_TIME;
 uint16_t seg_off_delay_cnt = SEG_DEFAULT_ON_TIME;
 bool LED_Ring_initialized = false;
@@ -329,25 +330,12 @@ int PCA9552_init(){
     uint8_t data[5];
     int ret;
 
-    // SEG_clear();
-
-    // for(int i=0; i<8; i++){
-    //     SEG_set_segments(LEFT_DIGIT, SEG_A << i);
-    //     sleep_ms(100);
-    // }
-    // for(int i=0; i<8; i++){
-    //     SEG_set_segments(RIGHT_DIGIT, SEG_A << i);
-    //     sleep_ms(100);
-    // }
-
     ret = SEG_clear();
     if (ret == PICO_ERROR_GENERIC || ret == PICO_ERROR_TIMEOUT) {
         printf("[SEG] Error: %d\n", ret);
         LED_Ring_initialized = false;
         return ret;
     }
-    SEG_write_number_hex((uint8_t)(VERSION_MAJOR << 4 | VERSION_MINOR));
-    SEG_add_dot(LEFT_DIGIT);
 
     return 0;
 }
@@ -402,6 +390,7 @@ void LED_Ring_set_mode(eLED_MODE mode){
     ledStrip.fill( PicoLed::RGB(0, 0, 0) );
     activeLED_MODE = mode;
     led_off_delay_cnt = LED_DEFAULT_ON_TIME;
+    led_tick_cnt = 0;
 }
 
 
@@ -413,19 +402,18 @@ void SEG_set_mode(eSEG_MODE mode){
     }
     activeSEG_MODE = mode;
     seg_off_delay_cnt = SEG_DEFAULT_ON_TIME;
-    if(mode == SEG_MODE_OFF){
+    if(mode == SEG_MODE_OFF || mode == SEG_MODE_TURN_OFF){
         seg_off_delay_cnt = 0;
     }
 }
 
 
 void LED_Ring_Tick(){
-    static uint8_t tick = 0;
 
     if(led_off_delay_cnt > 0){
         led_off_delay_cnt--;
     } else {
-        activeLED_MODE = LED_MODE_OFF;
+        activeLED_MODE = LED_MODE_TURN_OFF;
     }
 
     switch(activeLED_MODE){
@@ -433,7 +421,11 @@ void LED_Ring_Tick(){
             break;
 
         case LED_MODE_OFF:
+            break;
+
+        case LED_MODE_TURN_OFF:
             ledStrip.fill( PicoLed::RGB(0, 0, 0) );
+            activeLED_MODE = LED_MODE_OFF;
             break;
 
         case LED_MODE_ON:
@@ -441,7 +433,7 @@ void LED_Ring_Tick(){
             break;
 
         case LED_MODE_BLINK:
-            if(tick % 4 < 2){
+            if(led_tick_cnt % 4 < 2){
                 ledStrip.fill( ledColor );
             } else {
                 ledStrip.fill( PicoLed::RGB(0, 0, 0) );
@@ -449,27 +441,27 @@ void LED_Ring_Tick(){
             break;
 
         case LED_MODE_FADE:
-            ledStrip.fill( PicoLed::HSV(tick, 255, 255) );
+            ledStrip.fill( PicoLed::HSV(led_tick_cnt, 255, 255) );
             break;
 
         case LED_MODE_WALK:
             ledStrip.fill( PicoLed::RGB(0, 0, 0) );
-            ledStrip.setPixelColor(tick % LED_RING_COUNT, ledColor);
+            ledStrip.setPixelColor(led_tick_cnt % LED_RING_COUNT, ledColor);
             break;
 
         case LED_MODE_RAINBOW:
-            ledStrip.fillRainbow(tick, 255 / LED_RING_COUNT);
+            ledStrip.fillRainbow(led_tick_cnt, 255 / LED_RING_COUNT);
             break;
         
         case LED_MODE_FILL_CIRCLE:
-            ledStrip.setPixelColor((tick / 3) % LED_RING_COUNT, ledColor);
+            ledStrip.setPixelColor((led_tick_cnt / 3) % LED_RING_COUNT, ledColor);
             break;
     }
 
     ledStrip.show();
 
-    tick++;
-    tick %= 12*21;
+    led_tick_cnt++;
+    led_tick_cnt %= 12*21;
 }
 
 void SEG_Tick(){
@@ -484,17 +476,21 @@ void SEG_Tick(){
             SEG_pop_from_buffer();
             seg_off_delay_cnt = SEG_DEFAULT_ON_TIME;
         } else {
-            activeSEG_MODE = SEG_MODE_OFF;
+            activeSEG_MODE = SEG_MODE_TURN_OFF;
         }
     } else {
-        activeSEG_MODE = SEG_MODE_OFF;
+        activeSEG_MODE = SEG_MODE_TURN_OFF;
     }
     
     if(LED_Ring_initialized){
         switch (activeSEG_MODE)
         {
             case SEG_MODE_OFF:
+                break;
+
+            case SEG_MODE_TURN_OFF:
                 SEG_clear();
+                activeSEG_MODE = SEG_MODE_OFF;
                 break;
             
             case SEG_MODE_ON:
@@ -511,13 +507,21 @@ void SEG_Tick(){
                 SEG_write_number_hex(FRACK_get_beer());
                 break;
 
-            case SEG_MODE_BUFFER:
-                if(SEG_DisplayBuffer[0] == 0){
-                    SEG_set_mode(SEG_MODE_OFF);
-                } else if(SEG_DisplayBufferMode[0] == SEG_NUMBER_MODE_DEC){
-                    SEG_write_number(SEG_DisplayBuffer[0]);
-                } else if(SEG_DisplayBufferMode[0] == SEG_NUMBER_MODE_HEX){
-                    SEG_write_number_hex(SEG_DisplayBuffer[0]);
+            case SEG_MODE_BUFFER: 
+                if(SEG_DisplayBufferPending){
+                    if(SEG_DisplayBufferMode[0] == SEG_NUMBER_MODE_DEC){
+                        SEG_write_number(SEG_DisplayBuffer[0]);
+                    } else if(SEG_DisplayBufferMode[0] == SEG_NUMBER_MODE_HEX){
+                        SEG_write_number_hex(SEG_DisplayBuffer[0]);
+                    } else if(SEG_DisplayBufferMode[0] == SEG_NUMBER_MODE_DEC_DOT){
+                        SEG_write_number(SEG_DisplayBuffer[0]);
+                        SEG_add_dot(LEFT_DIGIT);
+                    } else if(SEG_DisplayBufferMode[0] == SEG_NUMBER_MODE_HEX_DOT){
+                        SEG_write_number_hex(SEG_DisplayBuffer[0]);
+                        SEG_add_dot(LEFT_DIGIT);
+                    }
+                } else {
+                    activeSEG_MODE = SEG_MODE_TURN_OFF;
                 }
                 break;
 

@@ -24,7 +24,6 @@ CC1101 radio(RADIO_SPI_CS, RADIO_GDO1, RADIO_SPI_MISO);
 uint8_t syncWord[2] = {0x47, 0xB5};
 bool packetWaiting = false;
 
-uint8_t rxFrom_id;
 uint8_t serBuffer[100];
 bool new_message = false;
 
@@ -65,8 +64,6 @@ void handleMessage(){
     {
         sprintf((char *)serBuffer, "packet: len %d", packet.length);
         SERIAL_printf("[RF] RX: %s\n", serBuffer);
-        
-        rxFrom_id = packet.data[PACKET_IDX_OWNER];
 
         // Check if packet is from this device
         if(packet.data[PACKET_IDX_OWNER] == frackstock.id || packet.data[PACKET_IDX_REPEATER_1] == frackstock.id || packet.data[PACKET_IDX_REPEATER_2] == frackstock.id){
@@ -83,7 +80,7 @@ void handleMessage(){
         }
 
         SEG_set_mode(SEG_MODE_CUSTOM);
-        SEG_write_number_hex(rxFrom_id);  
+        SEG_write_number_hex(packet.data[PACKET_IDX_OWNER]);  
         LED_Ring_set_color(packet.data[PACKET_IDX_COLOR_R], packet.data[PACKET_IDX_COLOR_G], packet.data[PACKET_IDX_COLOR_B]);
         LED_Ring_set_mode(LED_MODE_WALK);
 

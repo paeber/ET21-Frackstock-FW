@@ -68,7 +68,7 @@ int main() {
 
     SERIAL_printf("Init done\n");
 
-    SEG_add_to_buffer(VERSION_MAJOR << 4 | VERSION_MINOR, SEG_NUMBER_MODE_HEX);
+    SEG_add_to_buffer(VERSION_MAJOR << 4 | VERSION_MINOR, SEG_NUMBER_MODE_HEX_DOT);
     SEG_add_to_buffer(frackstock.id, SEG_NUMBER_MODE_HEX);
     SEG_set_mode(SEG_MODE_BUFFER);
 

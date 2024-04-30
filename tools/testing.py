@@ -15,7 +15,7 @@ run = True
 used_ports = []
 update_enable = False
 
-id = 0x40
+id = 93
 enumerate_ids = True
 
 # Set working directory

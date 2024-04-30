@@ -39,6 +39,7 @@
 // Data structures
 enum eLED_MODE {
     LED_MODE_OFF = 0,
+    LED_MODE_TURN_OFF,
     LED_MODE_ON,
     LED_MODE_CUSTOM,
     LED_MODE_BLINK,
@@ -50,6 +51,7 @@ enum eLED_MODE {
 
 enum eSEG_MODE {
     SEG_MODE_OFF = 0,
+    SEG_MODE_TURN_OFF,
     SEG_MODE_ON,
     SEG_MODE_CUSTOM,
     SEG_MODE_BEER_DEC,
@@ -59,7 +61,9 @@ enum eSEG_MODE {
 
 enum eSEG_NUMBER_MODE {
     SEG_NUMBER_MODE_DEC = 0,
-    SEG_NUMBER_MODE_HEX
+    SEG_NUMBER_MODE_HEX,
+    SEG_NUMBER_MODE_DEC_DOT,
+    SEG_NUMBER_MODE_HEX_DOT
 };
 
 // Global variables
