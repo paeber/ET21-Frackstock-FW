@@ -16,7 +16,13 @@ def flash_firmware(firmware):
     # Check if drive called RPI-RP2 is mounted
     if sys.platform == "darwin":
         
-        # Check if drive is mounted
+         # try 5 times to mount the drive
+        for i in range(5):
+            # Check if drive is mounted
+            if not os.path.exists("/Volumes/RPI-RP2"):
+                print(".", end="")
+                time.sleep(1)
+
         if not os.path.exists("/Volumes/RPI-RP2"):
             print("Drive not mounted")
             return 1
