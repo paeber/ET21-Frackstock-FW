@@ -23,6 +23,7 @@
 #include "radio.h"
 #include "imu.h"
 #include "serial.h"
+#include "interrupts.h"
 
 
 int main() {
@@ -106,7 +107,7 @@ int main() {
             LED_Ring_Tick();
         }
 
-        if(cnt % 10 == 0)
+        if(cnt % 2 == 0)    // Improve response time (limited by max_gesture_dur)
         {
             IMU_Tick();
         }

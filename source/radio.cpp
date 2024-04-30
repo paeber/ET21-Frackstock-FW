@@ -17,6 +17,7 @@
 #include "led_ring.h"
 #include "serial.h"
 #include "string.h"
+#include "interrupts.h"
 
 
 // Global variables
@@ -33,19 +34,6 @@ void handleMessage();
 int RADIO_get_rssi(uint8_t raw_rssi);
 void RADIO_repeat(uint8_t *data, uint8_t length);
 
-// Interrupt functions
-/**
- * @brief Callback function for handling received messages.
- *
- * This function is called when a message is received on a specific GPIO pin.
- * It sets the `packetWaiting` flag to true and sets the LED ring mode to blink.
- *
- * @param gpio The GPIO pin number on which the message is received.
- * @param events The events associated with the GPIO pin.
- */
-void messageReceived(uint gpio, uint32_t events) {
-    packetWaiting = true;
-}
 
 
 // Function definitions
@@ -68,14 +56,14 @@ void handleMessage(){
         // Check if packet is from this device
         if(packet.data[PACKET_IDX_OWNER] == frackstock.id || packet.data[PACKET_IDX_REPEATER_1] == frackstock.id || packet.data[PACKET_IDX_REPEATER_2] == frackstock.id){
             SERIAL_printf("[RF] RX: packet from self\n");
-            gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
+            gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts);
             return;
         }
 
         // Check if packet is for this device
         if(packet.data[PACKET_IDX_TARGET] != BROADCAST_ADDRESS && packet.data[PACKET_IDX_TARGET] != frackstock.id){
             SERIAL_printf("[RF] RX: packet not for self\n");
-            gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
+            gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts);
             return;
         }
 
@@ -91,7 +79,7 @@ void handleMessage(){
     
     }
   }
-  gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
+  gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts);
 }
 
 
@@ -134,7 +122,7 @@ void RADIO_init() {
     radio.setTxPowerAmp(PA_LongDistance);
 
     // Attach the interrupt
-    gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
+    gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts);
 }
 
 
@@ -166,7 +154,7 @@ void RADIO_send() {
 
     radio.sendData(packet);
 
-    gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
+    gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts);
 }
 
 
@@ -198,7 +186,7 @@ void RADIO_repeat(uint8_t *data, uint8_t length) {
     data[PACKET_IDX_TTL]--;
     radio.sendData(packet);
 
-    //gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &messageReceived);
+    //gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts);     // Why commented?   <<<---
 }
 
 
