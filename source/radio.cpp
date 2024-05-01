@@ -186,7 +186,7 @@ void RADIO_repeat(uint8_t *data, uint8_t length) {
     data[PACKET_IDX_TTL]--;
     radio.sendData(packet);
 
-    //gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts);     // Why commented?   <<<---
+    //gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts); // Part of handleMessage function
 }
 
 

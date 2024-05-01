@@ -97,22 +97,22 @@ int main() {
         #endif
 
         // Tasks
-        if(cnt % 4 == 0)
+        if(cnt % 4 == 0 || packetWaiting)
         {
             RADIO_Tick();
+        }
+
+        if(cnt % 4 == 1 || IMU_INT1_flag || IMU_INT2_flag) 
+        {
+            IMU_Tick();
         }
 
         if(cnt % 4 == 2)
         {
             LED_Ring_Tick();
         }
-
-        if(cnt % 2 == 0)    // Improve response time (limited by max_gesture_dur)
-        {
-            IMU_Tick();
-        }
         
-        if(cnt % 4 == 0)
+        if(cnt % 4 == 3)
         {
            SEG_Tick();
         }

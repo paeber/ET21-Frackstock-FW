@@ -4,6 +4,7 @@
 #include "led_ring.h"
 #include "hardware/gpio.h"
 #include "imu.h"
+#include "serial.h"
 
 
 /**
@@ -19,13 +20,13 @@ void handle_Interrupts(uint gpio, uint32_t events)
     //SEG_write_number_hex(0x17);     // Show that interrupt was triggered 17 = IT, for degug purposes
     if(gpio == IMU_INT1){
         IMU_INT1_flag = true;
-        printf("->IMU INT1\n");
+        SERIAL_printf("->IMU INT1\n");
     } else if(gpio == IMU_INT2){
         IMU_INT2_flag = true;
-        printf("->IMU INT2\n");
+        SERIAL_printf("->IMU INT2\n");
     } else if (gpio == RADIO_GDO1){
         packetWaiting = true;
-        printf("->RADIO INT\n");
+        SERIAL_printf("->RADIO INT\n");
     }
     
 }

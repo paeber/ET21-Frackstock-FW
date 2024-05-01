@@ -319,32 +319,6 @@ void IMU_Tick(){
         SERIAL_printf("Feature engine not ready\n");
     }
 
-    // Now done through ISR
-    /*BMI_get_reg(BMI323_INT_STATUS_INT1, &data, 1);
-    
-    // Check for tap detection
-    if(data & (0x1 << 8)){
-        BMI_get_reg(BMI323_FEATURE_EVENT_EXT, &data, 1);
-        if(data & SINGLE_TAP_DETECT){
-            SERIAL_printf("TICK: Single tap detected\n");
-            LED_Ring_set_mode(LED_MODE_RAINBOW);
-            RADIO_send();
-        } else if(data & DOUBLE_TAP_DETECT){
-            SERIAL_printf("TICK: Double tap detected\n");
-            LED_Ring_set_mode(LED_MODE_FADE);
-            SEG_add_to_buffer(FRACK_get_beer(), SEG_NUMBER_MODE_DEC);
-            SEG_set_mode(SEG_MODE_BUFFER);
-        } else if(data & TRIPPLE_TAP_DETECT){
-            SERIAL_printf("TICK: Tripple tap detected\n");
-            LED_Ring_set_mode(LED_MODE_ON);
-            FRACK_inc_beer();
-            SEG_add_to_buffer(FRACK_get_beer(), SEG_NUMBER_MODE_DEC);
-            SEG_set_mode(SEG_MODE_BUFFER);
-        } else {
-            SERIAL_printf("TICK: Unknown detected: 0x%04X\n", data);
-        }
-    }*/
-
 }
 
 
