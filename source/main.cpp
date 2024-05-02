@@ -23,6 +23,7 @@
 #include "radio.h"
 #include "imu.h"
 #include "serial.h"
+#include "gpio.h"
 
 
 int main() {
@@ -49,8 +50,7 @@ int main() {
     }
 
     // Initialize the GPIO pin
-    gpio_init(BUILTIN_LED_PIN);
-    gpio_set_dir(BUILTIN_LED_PIN, GPIO_OUT);
+    GPIO_init();
 
     // Initialize fractstock data
     FRACK_init();
@@ -119,9 +119,17 @@ int main() {
 
         if (cnt % 100 == 0)     // Heartbeat
         {
-            DEV_LED_toggle();
+            GPIO_LED_set(1);
+        }
+        else if (cnt % 100 == 10)
+        {
+            GPIO_LED_set(0);
         }
         
+        if (cnt % 30 == 0){
+            GPIO_Button_Tick();
+        }
+
 
         SERIAL_Tick();
         

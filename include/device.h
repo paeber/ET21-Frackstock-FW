@@ -26,7 +26,6 @@ int DEV_init();
 void DEV_reset_mcu();
 void DEV_enter_bootloader();
 void DEV_get_unique_id(uint8_t *unique_id);
-void DEV_LED_toggle();
 void DEV_get_frack_data(tFrackStock *frackstock);
 void DEV_set_frack_data(tFrackStock *frackstock);
 

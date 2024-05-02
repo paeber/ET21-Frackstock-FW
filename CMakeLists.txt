@@ -29,6 +29,7 @@ add_executable(Frackstock
     source/cc1101.cpp
     source/imu.cpp
     source/serial.cpp
+    source/gpio.cpp
 )
 
 pico_set_program_name(Frackstock "Frackstock")

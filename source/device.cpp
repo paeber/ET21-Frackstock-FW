@@ -40,14 +40,6 @@ void print_buf(const uint8_t *buf, size_t len) {
 
 
 /**
- * Toggles the state of the built-in LED.
- */
-void DEV_LED_toggle(){
-    gpio_get(BUILTIN_LED_PIN) ? gpio_put(BUILTIN_LED_PIN, 0) : gpio_put(BUILTIN_LED_PIN, 1);
-}
-
-
-/**
  * @brief Resets the microcontroller.
  *
  * This function performs a reset of the microcontroller by writing a specific value to a memory address.
