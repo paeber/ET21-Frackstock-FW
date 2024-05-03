@@ -30,6 +30,7 @@ add_executable(Frackstock
     source/imu.cpp
     source/serial.cpp
     source/interrupts.cpp
+    source/gpio.cpp
 )
 
 pico_set_program_name(Frackstock "Frackstock")
