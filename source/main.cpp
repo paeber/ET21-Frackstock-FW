@@ -23,6 +23,7 @@
 #include "radio.h"
 #include "imu.h"
 #include "serial.h"
+#include "interrupts.h"
 #include "gpio.h"
 
 
@@ -96,22 +97,22 @@ int main() {
         #endif
 
         // Tasks
-        if(cnt % 4 == 0)
+        if(cnt % 4 == 0 || packetWaiting)
         {
             RADIO_Tick();
+        }
+
+        if(cnt % 4 == 1 || IMU_INT1_flag || IMU_INT2_flag) 
+        {
+            IMU_Tick();
         }
 
         if(cnt % 4 == 2)
         {
             LED_Ring_Tick();
         }
-
-        if(cnt % 10 == 0)
-        {
-            IMU_Tick();
-        }
         
-        if(cnt % 4 == 0)
+        if(cnt % 4 == 3)
         {
            SEG_Tick();
         }
