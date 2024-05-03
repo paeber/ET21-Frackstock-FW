@@ -22,7 +22,7 @@
 4. Copy `*.uf2` file to the Pico mounted as a drive. The script will run on complete
 
 ## Development
-At the moment, setup in windows is the easiest. Mac OS and Linux need more manual steps to setup
+At the moment, setup in windows is the easiest. Mac OS and Linux need more manual steps to setup. [Pico C SDK](https://www.raspberrypi.com/documentation/pico-sdk/) is used within VS-Code.
 
 ### Windows Setup
 Follow the guide and installer
