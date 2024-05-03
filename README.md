@@ -7,11 +7,13 @@
 - [x] 868 MHz Tx and Rx
 - [x] IMU Tap detection
 - [x] Persistent flash storage for custom settings
+- [x] IMU Interrupts
+- [x] Touch Button 
 
 ### To do
 
-- [ ] IMU Interrupts
 - [ ] IMU any_motion and no_motion detection
+- [ ] Sleep mode for power improvements
 
 ## Flash instruction
 1. Press <kbd>BOOTSEL</kbd> button on Pico board
