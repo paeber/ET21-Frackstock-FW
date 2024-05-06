@@ -2,6 +2,7 @@
 <html>
     <head>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
         <script>
             if (!('serial' in navigator)) {
                 alert('Web Serial API not supported.');
@@ -24,9 +25,10 @@
         </style>
 
         <div class="container">
-            <div class="row mb-3">
+            <div class="row mt-3 mb-3">
                 <div class="col">
                     <h1>Frackstock Configurator</h1>
+                    <p>Press "Apply" button to make settings persistent over power-cycles</p>
                 </div>
             </div>
         </div>
@@ -47,33 +49,42 @@
                         <button id="getStatus" class="btn btn-primary" disabled>Refresh</button>
                     </div>
                     <div id="deviceInfo">
-                        <table style="width: 80%">
+                        <table class="table table-striped table-hover" style="width: 80%">
                             <th>Version</th><th>ID</th><th>Beer</th><th>Color</th><th>Abreviation</th>
                             <tr><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
                         </table>
                     </div>
+                    <div id="db_deviceInfo">
+                    </div>
                 </div>
             </div>
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title">Color</h5>
-                        <button id="setColor" class="btn btn-primary ml-2" disabled>Set</button>
+
+            <div class="row">
+                <div class="col-sm-12 col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title">Color</h5>
+                                <button id="setColor" class="btn btn-primary ml-2" disabled>Set</button>
+                            </div>
+                            
+                            Red:<input type="number" id="red" min="0" max="255" value="0" class="ml-2">
+                            Green:<input type="number" id="green" min="0" max="255" value="255" class="ml-2">
+                            Blue:<input type="number" id="blue" min="0" max="255" value="0" class="ml-2">
+                        </div>
                     </div>
-                    
-                    Red:<input type="number" id="red" min="0" max="255" value="0" class="ml-2">
-                    Green:<input type="number" id="green" min="0" max="255" value="255" class="ml-2">
-                    Blue:<input type="number" id="blue" min="0" max="255" value="0" class="ml-2">
                 </div>
-            </div>
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title">Abreviation</h5>
-                        <button id="setAbrev" class="btn btn-primary ml-2" disabled>Set</button>
+                <div class="col-sm-12 col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title">Abreviation</h5>
+                                <button id="setAbrev" class="btn btn-primary ml-2" disabled>Set</button>
+                            </div>
+                            Max 8 characters
+                            <input type="text" id="abrev" class="ml-2">
+                        </div>
                     </div>
-                    Max 8 characters
-                    <input type="text" id="abrev" class="ml-2">
                 </div>
             </div>
 
@@ -98,6 +109,7 @@
         let reader;
         let encoder = new TextEncoder('utf-8');
         let lines = [];
+        let unique_id = 'Unknown'
 
         function appendMessage(text) {
             let messageBox = document.getElementById('message');
@@ -149,7 +161,7 @@
                 let statusObj = JSON.parse(status);
                 // Zeigen Sie die analysierten Daten in der deviceInfo div an
                 document.getElementById('deviceInfo').innerHTML = `
-                    <table style="width: 80%">
+                    <table class="table table-striped table-hover" style="width: 80%">
                         <th>Version</th><th>ID</th><th>Beer</th><th>Color</th><th>Abreviation</th>
                         <tr><td>${statusObj.v}</td><td>${statusObj.id.toString()}</td><td>${statusObj.beer}</td><td>${statusObj.color}</td><td>${statusObj.abrev}</td>
                     </table>
@@ -157,11 +169,45 @@
             } catch (e) {
                 // The status message is not a valid JSON object
             }
+            
+            // Check if the status message is a unique ID defined by pattern "%02X %02X %02X %02X %02X %02X %02X %02X"
+            let uniqueIdPattern = /^([0-9A-Fa-f]{2}\s){7}[0-9A-Fa-f]{2}/;
+            if (uniqueIdPattern.test(status)) {
+                // remove line breaks
+                status = status.replace(/(\r\n|\n|\r)/gm, "");
+                console.log('Unique ID:', status);
+                unique_id = status;
+                // Lookup the unique ID in the data.csv file
+                lookupData(unique_id, 'device_list.csv').then(data => {
+                    console.log(data);
+                    // Display the data in the deviceInfo div
+                    document.getElementById('db_deviceInfo').innerHTML = `
+                        <table class="table table-striped table-hover" style="width: 80%">
+                            <th>#</th><th>Unique ID</th><th>ID</th><th>Color</th><th>Abreviation</th>
+                            <tr><td>${data['Pos']}</td><td>${data['Unique ID']}</td><td>${data['ID']}</td><td>${data['Color']}</td><td>${data['Abreviation']}</td>
+                        </table>
+                    `;
+                    
+                });
+            }
         }
 
         async function startReading() {
             reader = port.readable.getReader();
             await readLoop();
+        }
+
+        async function lookupData(uniqueId, filename) {
+            const response = await fetch(filename);
+            const csvData = await response.text();
+            const results = Papa.parse(csvData, {header: true}).data;
+            // Find the index of the row with the unique ID
+            let index = results.findIndex(row => row['Unique ID'] === uniqueId);
+            if (index !== -1) {
+                return results[index];
+            } else {
+                return {};
+            }
         }
 
         document.getElementById('connect').addEventListener('click', async () => {

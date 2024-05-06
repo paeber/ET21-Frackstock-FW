@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="icon" href="assets/favicon.png">
+
+    <title>Frackstock</title>
+  </head>
+  <style>
+    .card {
+        height: 100%;  /* Setzt die Höhe der Karte auf 100% */
+    }
+</style>
+  <body>
+    <div class="container">
+      <h1 class="mt-5">Frackstock</h1>
+      <p class="lead">BOM für die Platinen im Frackstock.</p>
+
+      <div class="row mt-3">
+        <div class="col-12 mb-3">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">Baseboard</h5>
+              <p class="card-text">Raspberry Pi Pico mit 868 MHz Modul sowie Peripherie.</p>
+              <a href="Baseboard-Frackstock.html" class="btn btn-primary">Interaktive BOM</a>
+              <a href="assets/Schematic-Frackstock.pdf" class="btn btn-primary">Schema</a>
+	            <a href="https://github.com/NiciKreis/ET21-Frackstock" class="btn btn-secondary">GitHub</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 mb-3">
+          <div class="card">
+            <div class="card-body">
+              <h5 class="card-title">LED-Ring</h5>
+              <p class="card-text">Erweiterungsplatine für das Baseboard.<br>
+                Positionen R21, R22 und R24 werden nicht Bestückt.<br>
+                Positionen C17, C18, C21 und C22 werden nicht Bestückt.
+              </p>
+              <a href="LED-Ring-Frackstock.html" class="btn btn-primary">Interaktive BOM</a>
+              <a href="assets/Schematic-LedRing.pdf" class="btn btn-primary">Schema</a>
+	            <a href="https://github.com/NiciKreis/ET21-Frackstock" class="btn btn-secondary">GitHub</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12 mb-3">
+            <div class="card">
+              <div class="card-body">
+                <h5 class="card-title">Firmware</h5>
+                <p class="card-text">Die Firmware ist in arbeit. Über den Konfigurator können Einstellungen auf dem Frackstock angepasst werden. Jeder Frackstock hat eine Definierte ID im Flash. Sollte die ID 0x00 oder 0xFF sein funktioniert das Ganze nicht. Bitte bei <b>Eberkreis</b> melden!</p>
+                <a href="https://github.com/paeber/ET21-Frackstock-FW/releases/latest/download/Frackstock.uf2" class="btn btn-primary">Download</a>
+                <a href="config.html" class="btn btn-primary">Konfigurator</a>
+                <a href="https://github.com/paeber/ET21-Frackstock-FW" class="btn btn-secondary">GitHub</a>
+              </div>
+            </div>
+          </div>
+      
+
+      <div class="col-12 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Mechanical</h5>
+            <p class="card-text">STL Files für den 3D Drucker.<br>
+		<b>Empfohlene Slicer Einstellungen:</b><br>
+	        - 0.2 mm Auflösung<br>
+		- 0.8 mm Wandstärke<br>
+		- 40% infill<br>
+		- Support, only touching buildplate<br>
+		- Brim enabled<br>
+		- Orientierung Oben: grosse Fläche auf Druckbett<br>	
+		- Orientierung Unten: Hohlraum auf Druckbett<br>	
+	    </p>
+            <a href="assets/Frackstock_STL/Frackstock_Oben.stl" class="btn btn-primary">Oben</a>
+            <a href="assets/Frackstock_STL/Frackstock_Unten.stl" class="btn btn-primary">Unten</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Büsi</h5>
+            <img src="https://cataas.com/cat/says/Hoi%20Hoi?fontSize=80&fontColor=white" style="width: 200;" class="img-fluid mt-5 mx-auto d-block" alt="Ein zufälliges Katzenbild" onerror="this.onerror=null; this.src='pfad/zum/ersatzbild.jpg';">
+          </div>
+        </div>
+      </div>
+
+
+
+    
+      
+      <!-- -->
+
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+  </body>
+</html>
