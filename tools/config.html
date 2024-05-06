@@ -210,6 +210,14 @@
             }
         }
 
+        async function listIds(filename) {
+            const response = await fetch(filename);
+            const csvData = await response.text();
+            const results = Papa.parse(csvData, {header: true}).data;
+            const ids = results.map(row => row['ID']);
+            return ids;
+        }
+
         document.getElementById('connect').addEventListener('click', async () => {
             port = await navigator.serial.requestPort();
             await port.open({ baudRate: 115200 });
