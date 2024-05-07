@@ -17,5 +17,6 @@ void GPIO_init();
 void GPIO_Button_Tick();
 void GPIO_LED_toggle();
 void GPIO_LED_set(uint8_t state);
+uint16_t GPIO_Button_getStates();
 
 #endif // GPIO_H

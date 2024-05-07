@@ -128,6 +128,15 @@ int SEG_pop_from_buffer(){
 }
 
 /**
+ * @brief Clears the display buffer.
+ * 
+ * This function sets the SEG_DisplayBufferPending flag to 0, indicating that the display buffer is empty.
+ */
+void SEG_clear_buffer(){
+    SEG_DisplayBufferPending = 0;
+}
+
+/**
  * Writes a number to the LED segment display.
  *
  * This function takes a single parameter `number` of type `uint8_t` and writes it to the LED segment display.
@@ -452,7 +461,15 @@ void LED_Ring_Tick(){
         case LED_MODE_RAINBOW:
             ledStrip.fillRainbow(led_tick_cnt, 255 / LED_RING_COUNT);
             break;
-        
+            
+        case LED_MODE_RGB_WALK:
+            for(int i=0; i<4; i++){
+                ledStrip.setPixelColor((led_tick_cnt + i) % LED_RING_COUNT, PicoLed::RGB(255, 0, 0));
+                ledStrip.setPixelColor((led_tick_cnt + i + 4) % LED_RING_COUNT, PicoLed::RGB(0, 255, 0));
+                ledStrip.setPixelColor((led_tick_cnt + i + 8) % LED_RING_COUNT, PicoLed::RGB(0, 0, 255));
+            }
+            break;
+
         case LED_MODE_FILL_CIRCLE:
             ledStrip.setPixelColor((led_tick_cnt / 3) % LED_RING_COUNT, ledColor);
             break;
@@ -519,6 +536,12 @@ void SEG_Tick(){
                     } else if(SEG_DisplayBufferMode[0] == SEG_NUMBER_MODE_HEX_DOT){
                         SEG_write_number_hex(SEG_DisplayBuffer[0]);
                         SEG_add_dot(LEFT_DIGIT);
+                    } else if(SEG_DisplayBufferMode[0] == SEG_NUMBER_MODE_DEC_DOT_RIGHT){
+                        SEG_write_number(SEG_DisplayBuffer[0]);
+                        SEG_add_dot(RIGHT_DIGIT);
+                    } else if(SEG_DisplayBufferMode[0] == SEG_NUMBER_MODE_HEX_DOT_RIGHT){
+                        SEG_write_number_hex(SEG_DisplayBuffer[0]);
+                        SEG_add_dot(RIGHT_DIGIT);
                     }
                 } else {
                     activeSEG_MODE = SEG_MODE_TURN_OFF;

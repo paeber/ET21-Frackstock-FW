@@ -65,12 +65,16 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5 class="card-title">Color</h5>
+                            </div>
+                            <p>Define your color for the LED-Ring. This color is transmitted to the other devices.</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p>
+                                    Red:<input type="number" id="red" min="0" max="255" value="0" class="ml-2">
+                                    Green:<input type="number" id="green" min="0" max="255" value="255" class="ml-2">
+                                    Blue:<input type="number" id="blue" min="0" max="255" value="0" class="ml-2">
+                                </p>
                                 <button id="setColor" class="btn btn-primary ml-2" disabled>Set</button>
                             </div>
-                            
-                            Red:<input type="number" id="red" min="0" max="255" value="0" class="ml-2">
-                            Green:<input type="number" id="green" min="0" max="255" value="255" class="ml-2">
-                            Blue:<input type="number" id="blue" min="0" max="255" value="0" class="ml-2">
                         </div>
                     </div>
                 </div>
@@ -79,10 +83,54 @@
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center">
                                 <h5 class="card-title">Abreviation</h5>
+                            </div>
+                            <p>Define your abreviation. It is not used at the moment but may allow additional features later on</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p>
+                                    Max 8 characters <input type="text" id="abrev" class="ml-2">
+                                </p>
                                 <button id="setAbrev" class="btn btn-primary ml-2" disabled>Set</button>
                             </div>
-                            Max 8 characters
-                            <input type="text" id="abrev" class="ml-2">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-12 col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title">Beer Counter</h5>
+                            </div>
+                            <p>
+                                Use this to correct the beer counter if messed up. 
+                                Fakeing the beer counter is vorbidden and will be punished within the regulations of the Beard-Contract. 
+                                You agree to the terms by pressing the "Set" button.
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p>
+                                    New value: <input type="number" id="beer" min="0" max="99" value="0" class="ml-2">
+                                </p>
+                                <button id="setBeer" class="btn btn-primary ml-2" disabled>Set</button>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-12 col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title">Frack-Buddy ID</h5>
+                            </div>
+                            <p>
+                                Configure the ID of the Frack-Buddy which can be directly addressed through radio.
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p>
+                                    ID (decimal): <input type="number" id="buddy" min="1" max="254" value="255" class="ml-2">
+                                </p>
+                                <button id="setBuddy" class="btn btn-primary ml-2" disabled>Set</button>
+                            </div>
+                            
                         </div>
                     </div>
                 </div>
@@ -184,7 +232,7 @@
                     document.getElementById('db_deviceInfo').innerHTML = `
                         <table class="table table-striped table-hover" style="width: 80%">
                             <th>#</th><th>Unique ID</th><th>ID</th><th>Color</th><th>Abreviation</th>
-                            <tr><td>${data['Pos']}</td><td>${data['Unique ID']}</td><td>${data['ID']}</td><td>${data['Color']}</td><td>${data['Abreviation']}</td>
+                            <tr><td>${data['Pos']}</td><td>${data['Unique ID']}</td><td>${data['ID']} (0x${Number(data['ID']).toString(16)})</td><td>${data['Color']}</td><td>${data['Abreviation']}</td>
                         </table>
                     `;
                     
@@ -228,6 +276,8 @@
             document.getElementById('reset').disabled = false;
             document.getElementById('getStatus').disabled = false;
             document.getElementById('send').disabled = false;
+            document.getElementById('setBeer').disabled = false;
+            document.getElementById('setBuddy').disabled = false;
 
             startReading();
         });
@@ -253,6 +303,8 @@
             document.getElementById('reset').disabled = true;
             document.getElementById('getStatus').disabled = true;
             document.getElementById('send').disabled = true;
+            document.getElementById('setBeer').disabled = true;
+            document.getElementById('setBuddy').disabled = true;
         });
 
         document.getElementById('apply').addEventListener('click', async () => {
@@ -266,6 +318,16 @@
         document.getElementById('send').addEventListener('click', async () => {
             let command = document.getElementById('command').value;
             sendMessage(command);
+        });
+
+        document.getElementById('setBeer').addEventListener('click', async () => {
+            let beer = document.getElementById('beer').value;
+            sendMessage(`set beer ${beer}`);
+        });
+
+        document.getElementById('setBuddy').addEventListener('click', async () => {
+            let buddy = document.getElementById('buddy').value;
+            sendMessage(`set buddy ${buddy}`);
         });
 
     </script>

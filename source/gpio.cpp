@@ -50,6 +50,18 @@ void GPIO_LED_set(uint8_t state){
 
 
 /**
+ * @brief Get the stored states of the button.
+ *
+ * This function returns the oldest 16 states of the button as a uint16_t value. 
+ * The least significant bit represents the newest state, and the most significant bit represents the oldest state.
+ *
+ * @return The states of the button as a uint16_t value.
+ */
+uint16_t GPIO_Button_getStates(){
+    return button_state;
+}
+
+/**
  * @brief Function to handle button tick event.
  * 
  * This function is responsible for handling the button tick event. It updates the button state, checks if the button is pressed, and performs specific actions based on the button state.

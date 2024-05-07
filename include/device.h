@@ -14,6 +14,7 @@
 #define IDX_VERSION             0
 #define IDX_FLASH_CNT           1
 #define IDX_FRACK_ID            2
+#define IDX_BUDDY_ID            3
 
 #define IDX_BEER                10
 #define IDX_ABREV               11

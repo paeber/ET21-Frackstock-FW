@@ -18,6 +18,7 @@
 #include "serial.h"
 #include "string.h"
 #include "interrupts.h"
+#include "gpio.h"
 
 
 // Global variables
@@ -67,10 +68,13 @@ void handleMessage(){
             return;
         }
 
-        SEG_set_mode(SEG_MODE_CUSTOM);
-        SEG_write_number_hex(packet.data[PACKET_IDX_OWNER]);  
-        LED_Ring_set_color(packet.data[PACKET_IDX_COLOR_R], packet.data[PACKET_IDX_COLOR_G], packet.data[PACKET_IDX_COLOR_B]);
-        LED_Ring_set_mode(LED_MODE_WALK);
+        // Check if user is not using button
+        if(GPIO_Button_getStates() == 0){
+            SEG_set_mode(SEG_MODE_CUSTOM);
+            SEG_write_number_hex(packet.data[PACKET_IDX_OWNER]);  
+            LED_Ring_set_color(packet.data[PACKET_IDX_COLOR_R], packet.data[PACKET_IDX_COLOR_G], packet.data[PACKET_IDX_COLOR_B]);
+            LED_Ring_set_mode(LED_MODE_WALK);
+        }
 
         // Check if packet needs to be repeated
         if(packet.data[PACKET_IDX_TTL] > 0) {
