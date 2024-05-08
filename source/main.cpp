@@ -80,7 +80,7 @@ int main() {
         
         // Send some data
         if(cnt % 2000 == 1000){
-            RADIO_send();
+            RADIO_send(BROADCAST_ADDRESS);
             if(!GPIO_Button_getStates()){
                 LED_Ring_set_color(frackstock.color[0], frackstock.color[1], frackstock.color[2]);
                 LED_Ring_set_mode(LED_MODE_FILL_CIRCLE);

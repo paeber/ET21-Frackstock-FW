@@ -40,6 +40,7 @@ void RADIO_repeat(uint8_t *data, uint8_t length);
 // Function definitions
 void handleMessage(){
   CCPACKET packet;
+  eLED_MODE led_mode = LED_MODE_WALK;
   gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
   if (radio.receiveData(&packet) > 0){
     if (!packet.crc_ok)
@@ -68,12 +69,16 @@ void handleMessage(){
             return;
         }
 
+        if((packet.data[PACKET_IDX_LED_MODE] != LED_MODE_OFF) && (packet.data[PACKET_IDX_LED_MODE] != LED_MODE_TURN_OFF)){
+            led_mode = (eLED_MODE)packet.data[PACKET_IDX_LED_MODE];
+        }
+
         // Check if user is not using button
         if(GPIO_Button_getStates() == 0){
             SEG_set_mode(SEG_MODE_CUSTOM);
             SEG_write_number_hex(packet.data[PACKET_IDX_OWNER]);  
             LED_Ring_set_color(packet.data[PACKET_IDX_COLOR_R], packet.data[PACKET_IDX_COLOR_G], packet.data[PACKET_IDX_COLOR_B]);
-            LED_Ring_set_mode(LED_MODE_WALK);
+            LED_Ring_set_mode(led_mode);
         }
 
         // Check if packet needs to be repeated
@@ -131,13 +136,16 @@ void RADIO_init() {
 
 
 /**
- * Sends a radio packet.
- * 
- * This function prepares a radio packet with the necessary data and sends it using the radio module.
- * It sets the packet length, owner ID, target address, time-to-live (TTL), repeater addresses, and beer value.
- * After sending the packet, it enables the interrupt for receiving messages.
+ * @brief Sends a radio packet to the specified target.
+ *
+ * This function prepares a CCPACKET with the necessary data and sends it using the radio module.
+ * The packet includes information such as the owner ID, target ID, time-to-live (TTL), repeater IDs,
+ * beer level, and color values. After sending the packet, the function enables the interrupt for
+ * GPIO pin RADIO_GDO1 with the specified callback function.
+ *
+ * @param target The ID of the target device to send the packet to.
  */
-void RADIO_send() {
+void RADIO_send(uint8_t target) {
     CCPACKET packet;
 
     gpio_set_irq_enabled(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, false);
@@ -147,7 +155,7 @@ void RADIO_send() {
         packet.data[i] = 0;
     }
     packet.data[PACKET_IDX_OWNER] = frackstock.id;
-    packet.data[PACKET_IDX_TARGET] = BROADCAST_ADDRESS;
+    packet.data[PACKET_IDX_TARGET] = target;
     packet.data[PACKET_IDX_TTL] = RADIO_TTL;
     packet.data[PACKET_IDX_REPEATER_1] = 0;
     packet.data[PACKET_IDX_REPEATER_2] = 0;
@@ -155,6 +163,11 @@ void RADIO_send() {
     packet.data[PACKET_IDX_COLOR_R] = frackstock.color[0];
     packet.data[PACKET_IDX_COLOR_G] = frackstock.color[1];
     packet.data[PACKET_IDX_COLOR_B] = frackstock.color[2];
+    if(target == BROADCAST_ADDRESS){
+        packet.data[PACKET_IDX_LED_MODE] = LED_MODE_WALK;
+    } else {
+        packet.data[PACKET_IDX_LED_MODE] = LED_MODE_RGB_WALK;
+    }
 
     radio.sendData(packet);
 

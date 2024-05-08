@@ -37,12 +37,13 @@
 #define PACKET_IDX_COLOR_R      6
 #define PACKET_IDX_COLOR_G      7
 #define PACKET_IDX_COLOR_B      8
+#define PACKET_IDX_LED_MODE     9
 
 
 
 // Function prototypes
 void RADIO_init();
 void RADIO_Tick();
-void RADIO_send();
+void RADIO_send(uint8_t target);
 
 #endif // RADIO_H

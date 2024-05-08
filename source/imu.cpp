@@ -57,19 +57,22 @@ void IMU_INT1_handle(){
 
         if(data & SINGLE_TAP_DETECT){
             SERIAL_printf("Single tap detected\n");
-            LED_Ring_set_mode(LED_MODE_RAINBOW);
-            RADIO_send();
-        } else if(data & DOUBLE_TAP_DETECT){
-            SERIAL_printf("Double tap detected\n");
             LED_Ring_set_mode(LED_MODE_FADE);
             SEG_add_to_buffer(FRACK_get_beer(), SEG_NUMBER_MODE_DEC);
             SEG_set_mode(SEG_MODE_BUFFER);
+        } else if(data & DOUBLE_TAP_DETECT){
+            SERIAL_printf("Double tap detected\n");
+            LED_Ring_set_mode(LED_MODE_FILL_CIRCLE);
+            SEG_set_mode(SEG_MODE_CUSTOM);
+            SEG_set_segments(LEFT_DIGIT, SEG_CHAR_t);
+            SEG_set_segments(RIGHT_DIGIT, SEG_CHAR_r);
+            RADIO_send(BROADCAST_ADDRESS);
         } else if(data & TRIPPLE_TAP_DETECT){
             SERIAL_printf("Tripple tap detected\n");
-            LED_Ring_set_mode(LED_MODE_ON);
-            FRACK_inc_beer();
-            SEG_add_to_buffer(FRACK_get_beer(), SEG_NUMBER_MODE_DEC);
+            LED_Ring_set_mode(LED_MODE_RGB_WALK);
+            SEG_add_to_buffer(frackstock.buddy, SEG_NUMBER_MODE_HEX);
             SEG_set_mode(SEG_MODE_BUFFER);
+            RADIO_send(frackstock.buddy);
         } else {
             SERIAL_printf("Unknown detected: 0x%04X\n", data);
         }
