@@ -53,8 +53,6 @@ void IMU_INT1_handle(){
 
     // Check for tap detection
     if(interrupt & (0x1 << 8)){
-        SERIAL_printf("Tap detected\n");
-
         BMI_get_reg(BMI323_FEATURE_EVENT_EXT, &data, 1);
 
         if(data & SINGLE_TAP_DETECT){
@@ -144,8 +142,6 @@ void IMU_init(){
     sleep_ms(150);
     BMI323_soft_reset();
     sleep_ms(150);
-
-    //IMU_State = IMU_STATE_REBOOT;
     
     IMU_Startup();
     IMU_Enable_Feature_Engine();
@@ -375,6 +371,15 @@ void IMU_Tick(){
     uint16_t reg_data[16];
     uint16_t data;
 
+    // Check for interrupts
+    if(IMU_INT1_flag){
+        IMU_INT1_handle();
+    }
+
+    if(IMU_INT2_flag){
+        IMU_INT2_handle();
+    }
+
     /*
     switch(IMU_State){
         case IMU_STATE_UNKNOWN:
@@ -441,18 +446,6 @@ void IMU_Tick(){
         IMU_State = IMU_STATE_UNKNOWN;
         return;
     }*/
-
-    // Check for interrupts
-    if(IMU_INT1_flag){
-        IMU_INT1_handle();
-    }
-
-    if(IMU_INT2_flag){
-        IMU_INT2_handle();
-    }
-
-
-        
 
 }
 
