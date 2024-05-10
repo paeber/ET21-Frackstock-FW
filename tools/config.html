@@ -46,12 +46,15 @@
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title">Device Info</h5>
-                        <button id="getStatus" class="btn btn-primary" disabled>Refresh</button>
+                        <p>
+                            <button id="getUnique" class="btn btn-primary" disabled>Unique ID</button>
+                            <button id="getStatus" class="btn btn-primary" disabled>Refresh</button>
+                        </p>
                     </div>
                     <div id="deviceInfo">
-                        <table class="table table-striped table-hover" style="width: 80%">
-                            <th>Version</th><th>ID</th><th>Beer</th><th>Color</th><th>Abreviation</th>
-                            <tr><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
+                        <table class="table table-striped table-hover" style="width: 100%">
+                            <th>Version</th><th>ID</th><th>Buddy</th><th>Beer</th><th>Color</th><th>Abreviation</th>
+                            <tr><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
                         </table>
                     </div>
                     <div id="db_deviceInfo">
@@ -210,7 +213,7 @@
                 let statusObj = JSON.parse(status);
                 // Zeigen Sie die analysierten Daten in der deviceInfo div an
                 document.getElementById('deviceInfo').innerHTML = `
-                    <table class="table table-striped table-hover" style="width: 80%">
+                    <table class="table table-striped table-hover" style="width: 100%">
                         <th>Version</th><th>ID</th><th>Buddy</th><th>Beer</th><th>Color</th><th>Abreviation</th>
                         <tr><td>${statusObj.v}</td><td>${"0x" + statusObj.id.toString(16)}</td><td>${"0x" + statusObj.buddy.toString(16)}</td><td>${statusObj.beer}</td><td>${statusObj.color}</td><td>${statusObj.abrev}</td>
                     </table>
@@ -231,7 +234,7 @@
                     console.log(data);
                     // Display the data in the deviceInfo div
                     document.getElementById('db_deviceInfo').innerHTML = `
-                        <table class="table table-striped table-hover" style="width: 80%">
+                        <table class="table table-striped table-hover" style="width: 100%">
                             <th>#</th><th>Unique ID</th><th>ID</th><th>Color</th><th>Abreviation</th>
                             <tr><td>${data['Pos']}</td><td>${data['Unique ID']}</td><td>${data['ID']} (0x${Number(data['ID']).toString(16)})</td><td>${data['Color']}</td><td>${data['Abreviation']}</td>
                         </table>
@@ -279,8 +282,11 @@
             document.getElementById('send').disabled = false;
             document.getElementById('setBeer').disabled = false;
             document.getElementById('setBuddy').disabled = false;
+            document.getElementById('getUnique').disabled = false;
 
             startReading();
+
+            sendMessage('status');
         });
 
         document.getElementById('setColor').addEventListener('click', async () => {
@@ -306,6 +312,7 @@
             document.getElementById('send').disabled = true;
             document.getElementById('setBeer').disabled = true;
             document.getElementById('setBuddy').disabled = true;
+            document.getElementById('getUnique').disabled = true;
         });
 
         document.getElementById('apply').addEventListener('click', async () => {
@@ -314,6 +321,10 @@
 
         document.getElementById('getStatus').addEventListener('click', async () => {
             sendMessage('status');
+        });
+
+        document.getElementById('getUnique').addEventListener('click', async () => {
+            sendMessage('unique');
         });
 
         document.getElementById('send').addEventListener('click', async () => {
