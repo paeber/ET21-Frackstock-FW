@@ -26,6 +26,8 @@ void BMI323_Select();
 void BMI323_Deselect();
 void BMI323_wait_Miso();
 void BMI323_soft_reset();
+uint8_t BMI323_com_check();
+void BMI323_Dummy_Read();
 
 void IMU_INT_irq(uint gpio, uint32_t events);
 void IMU_INT1_handle();
@@ -34,7 +36,7 @@ void IMU_INT2_handle();
 // Global variables
 bool IMU_INT1_flag = false;
 bool IMU_INT2_flag = false;
-
+IMU_State_t IMU_State = IMU_STATE_UNKNOWN;
 
 
 /**
@@ -113,9 +115,7 @@ void IMU_INT2_handle(){
  * @note This function assumes that the necessary GPIO pins and SPI port have been initialized before calling this function.
  */
 void IMU_init(){
-    uint16_t config = 0x0000;
-    uint16_t data_in[16];
-    uint8_t addr = 0 | 0x80;
+    uint16_t ret = 0;
 
     // Initialize the SPI port
     spi_init(IMU_SPI_PORT, IMU_SPI_BAUDRATE);
@@ -140,11 +140,30 @@ void IMU_init(){
     gpio_set_dir(IMU_INT2, GPIO_IN);
     gpio_pull_up(IMU_INT2);
 
-
     // Initialize the IMU
     sleep_ms(150);
     BMI323_soft_reset();
     sleep_ms(150);
+
+    //IMU_State = IMU_STATE_REBOOT;
+    
+    IMU_Startup();
+    IMU_Enable_Feature_Engine();
+    IMU_Configure_Sensor();
+    IMU_Configure_Features();
+    IMU_Configure_IT();
+    IMU_State = IMU_STATE_CONFIGURED;
+}
+
+
+/**
+ * @brief Initializes the IMU and checks its status.
+ * @return 0 if the IMU is functioning properly, 1 if the IMU is not detected, 2 if there is an IMU power error.
+ */
+uint16_t IMU_Startup(){
+    uint16_t config = 0x0000;
+    uint16_t data_in[16];
+    uint8_t addr = 0 | 0x80;
 
     // Dummy write/read to wake up the IMU
     spi_write_blocking(IMU_SPI_PORT, &addr, 1);
@@ -153,14 +172,19 @@ void IMU_init(){
     sleep_ms(350);
 
     // Read the chip ID
-    BMI_get_reg(BMI323_CHIP_ID, data_in, 1);
-    SERIAL_printf("Chip ID: 0x%04X\n", data_in[0]);
+    if(BMI323_com_check()){
+        SERIAL_printf("IMU not detected\n");
+        BMI_get_reg(BMI323_CHIP_ID, data_in, 1);
+        SERIAL_printf("Chip ID: 0x%04X\n", data_in[0]);
+        return 1;
+    }
 
     // Read the error register
     BMI_get_reg(BMI323_ERR_REG, data_in, 1);
     SERIAL_printf("Error register: 0x%04X\n", data_in[0]);
     if(data_in[0] & 0x0001) {
         SERIAL_printf("IMU Power Error\n");
+        return 2;
     }
 
     // Read the status register
@@ -169,10 +193,21 @@ void IMU_init(){
     if(data_in[0] & 0x1) {
         SERIAL_printf("IMU OK\n");
     }
+    return 0;
+}
 
-    // 
-    // Enable feature engine
-    //
+
+/**
+ * @brief Enables the feature engine of the IMU.
+ * 
+ * This function enables the feature engine of the IMU by configuring the necessary registers.
+ * It waits for the feature engine to be enabled and returns an error if it fails.
+ * 
+ * @return 0 if the feature engine is successfully enabled, 1 otherwise.
+ */
+uint16_t IMU_Enable_Feature_Engine(){
+    uint16_t config = 0x0000;
+
     config = 0x012C;
     BMI_set_reg(BMI323_FEATURE_IO2, &config, 1);
     config = 0x0001;
@@ -189,15 +224,25 @@ void IMU_init(){
             break;
         }
     }
-    if((config & 0x0f) == 0x01){
-        SERIAL_printf("\nFeature engine enabled\n");
-    } else {
+    if((config & 0x0f) != 0x01){
         SERIAL_printf("\nFeature engine not enabled\n");
+        return 1;
     }
 
-    // 
-    // Enable sensors
-    //
+    return 0;
+}
+
+
+/**
+ * Configures the IMU sensor by enabling the accelerometer and gyroscope.
+ * Sets the desired configuration values for each sensor.
+ * Reads and prints the configuration values for verification.
+ *
+ * @return 0 on success.
+ */
+uint16_t IMU_Configure_Sensor(){
+    uint16_t config = 0x0000;
+    uint16_t data_in[16];
 
     // Enable the accelerometer
     uint16_t acc_conf = 0x0000; // Default value
@@ -228,10 +273,20 @@ void IMU_init(){
     BMI_get_reg(BMI323_GYR_CONF, &config, 1);
     SERIAL_printf("GYR_CONF: 0x%04X\n", config);
 
-    
-    //
-    // Configure Features
-    //
+    return 0;
+}
+
+
+/**
+ * @brief Configures the features of the IMU.
+ * 
+ * This function configures the features of the IMU, such as tap detection.
+ * It sets the necessary registers and applies the required settings for tap detection.
+ * 
+ * @return The function does not return any value.
+ */
+uint16_t IMU_Configure_Features(){ 
+    uint16_t config = 0x0000;
 
     // Configure Tab detection
     uint16_t fAddr = (uint16_t)FEATURE_TAP_1;
@@ -263,11 +318,22 @@ void IMU_init(){
     sleep_ms(10);
     BMI_get_reg(BMI323_FEATURE_IO0, &config, 1);
     SERIAL_printf("FEATURE_IO0: 0x%04X\n", config);
-    
 
-    //
-    // Configure the BMI interrupts
-    //
+    return 0;
+}
+
+
+/**
+ * @brief Configures the BMI interrupt for the IMU.
+ *
+ * This function configures the BMI interrupt for the IMU by setting the interrupt mapping,
+ * interrupt polarity, and enabling the interrupt output. It also sets up the GPIO interrupts
+ * for the IMU.
+ *
+ * @return 0 on success.
+ */
+uint16_t IMU_Configure_IT(){
+    uint16_t config = 0x0000;
 
     BMI_get_reg(BMI323_INT_MAP2, &config, 1);
     config = (config & (uint16_t)(~0b11)) | (0b01 << 0); // Map tap detection to INT2
@@ -291,6 +357,8 @@ void IMU_init(){
     // Set up the interrupt
     gpio_set_irq_enabled_with_callback(IMU_INT1, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts);
     gpio_set_irq_enabled_with_callback(IMU_INT2, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts);
+
+    return 0;
 }
 
 
@@ -307,6 +375,73 @@ void IMU_Tick(){
     uint16_t reg_data[16];
     uint16_t data;
 
+    /*
+    switch(IMU_State){
+        case IMU_STATE_UNKNOWN:
+            BMI323_soft_reset();
+            IMU_State = IMU_STATE_REBOOT;
+            break;
+
+        case IMU_STATE_REBOOT:
+            if(IMU_Startup()){
+                IMU_State = IMU_STATE_ERROR;
+            } else {
+                IMU_State = IMU_STATE_COM_OK;
+            }
+            break;
+
+        case IMU_STATE_COM_OK:
+            if(IMU_Enable_Feature_Engine()){
+                IMU_State = IMU_STATE_ERROR;
+            } else {
+                IMU_State = IMU_STATE_FEATURE_EN;
+            }
+            break;
+
+        case IMU_STATE_FEATURE_EN:
+            if(IMU_Configure_Sensor()){
+                IMU_State = IMU_STATE_ERROR;
+            } else {
+                IMU_State = IMU_STATE_SENSOR_EN;
+            }
+            break;
+
+        case IMU_STATE_SENSOR_EN:
+            if(IMU_Configure_Features()){
+                IMU_State = IMU_STATE_ERROR;
+            } else {
+                IMU_State = IMU_STATE_FEATURES_CONFIGURED;
+            }
+            break;
+        
+        case IMU_STATE_FEATURES_CONFIGURED:
+            if(IMU_Configure_IT()){
+                IMU_State = IMU_STATE_ERROR;
+            } else {
+                IMU_State = IMU_STATE_IT_EN;
+            }
+            break;
+
+        case IMU_STATE_IT_EN:
+            IMU_State = IMU_STATE_CONFIGURED;
+            break;
+
+        case IMU_STATE_ERROR:
+            SERIAL_printf("IMU error\n");
+            IMU_State = IMU_STATE_UNKNOWN;
+            break;
+
+    }
+    */
+
+
+    /*BMI_get_reg(BMI323_FEATURE_IO1, &data, 1);
+    if(data & 0x0f == 0){
+        SERIAL_printf("Feature engine not ready\n");
+        IMU_State = IMU_STATE_UNKNOWN;
+        return;
+    }*/
+
     // Check for interrupts
     if(IMU_INT1_flag){
         IMU_INT1_handle();
@@ -317,10 +452,7 @@ void IMU_Tick(){
     }
 
 
-    BMI_get_reg(BMI323_FEATURE_IO1, &data, 1);
-    if(data & 0x0f == 0){
-        SERIAL_printf("Feature engine not ready\n");
-    }
+        
 
 }
 
@@ -428,4 +560,46 @@ void BMI323_soft_reset()
   BMI323_Select();
   sleep_ms(1);
   BMI323_Deselect();
+}
+
+
+/**
+ * @brief Checks the communication with the BMI323 chip.
+ * 
+ * This function reads the chip ID register of the BMI323 chip and compares it with the expected value.
+ * If the chip ID matches the expected value, it indicates successful communication with the chip.
+ * 
+ * @return 0 if the communication is successful, 1 otherwise.
+ */
+uint8_t BMI323_com_check(){
+    uint16_t data = 0;
+    BMI_get_reg(BMI323_CHIP_ID, &data, 1);
+    if((data & 0x00ff) == BMI323_CHIP_ID_VAL){
+        return (0u);
+    }
+    return (1u);
+}
+
+
+/**
+ * @brief Performs a dummy write/read operation to wake up the IMU.
+ *
+ * This function sends a dummy write command followed by a read command to the IMU in order to wake it up.
+ * It uses the SPI interface to communicate with the IMU.
+ */
+void BMI323_Dummy_Read(){
+    uint16_t data_in[16];
+    uint8_t addr = 0 | 0x80;
+
+    // Dummy write/read to wake up the IMU
+    spi_write_blocking(IMU_SPI_PORT, &addr, 1);
+    spi_read16_blocking(IMU_SPI_PORT, 0, data_in, 1);
+}
+
+
+/**
+ * @brief Enum representing the state of the IMU (Inertial Measurement Unit).
+ */
+IMU_State_t IMU_get_state(){
+    return IMU_State;
 }

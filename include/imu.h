@@ -20,6 +20,8 @@ extern "C" {
 #define IMU_INT1            14
 #define IMU_INT2            15
 
+#define BMI323_CHIP_ID_VAL  0x0043
+
 // IMU Registers
 #define BMI323_CHIP_ID              0x00
 #define BMI323_ERR_REG              0x01
@@ -111,8 +113,18 @@ extern "C" {
 #define GYR_BW_ODR2                 (uint16_t)(0b0 << 7)
 #define GYR_BW_ODR4                 (uint16_t)(0b1 << 7)
 
-
-
+// Enums
+typedef enum {
+    IMU_STATE_UNKNOWN = 0,
+    IMU_STATE_REBOOT,
+    IMU_STATE_COM_OK,
+    IMU_STATE_FEATURE_EN,
+    IMU_STATE_SENSOR_EN,
+    IMU_STATE_FEATURES_CONFIGURED,
+    IMU_STATE_IT_EN,
+    IMU_STATE_CONFIGURED,
+    IMU_STATE_ERROR
+} IMU_State_t;
 
 // Functions
 void BMI_set_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length);
@@ -120,6 +132,12 @@ void BMI_get_reg(uint8_t reg_addr, uint16_t *reg_data, uint32_t length);
 
 void IMU_init();
 void IMU_Tick();
+uint16_t IMU_Startup();
+uint16_t IMU_Enable_Feature_Engine();
+uint16_t IMU_Configure_Sensor();
+uint16_t IMU_Configure_Features();
+uint16_t IMU_Configure_IT();
+IMU_State_t IMU_get_state();
 
 
 #ifdef __cplusplus
