@@ -71,12 +71,13 @@ void SERIAL_handle(){
         printf("serial - Enable/Disable serial messages\n");
         printf("set abrev - Set a new abreviation\n");
         printf("set beer - Set the amount of beer\n");
+        printf("set buddy - Set the buddy ID\n");
         printf("reset beer - Reset the amount of beer\n");
         printf("set color - Set the (r,g,b) of the LED Ring\n");
         printf("apply - Apply the changes\n");
         printf("bootloader - Enter the bootloader (disabled)\n");
     } else if(strcmp((char *)buffer, "status") == 0) {
-        sprintf((char *)buffer, "{\"v\": %d.%d, \"id\": %d, \"beer\": %d, \"color\": [%d, %d, %d], \"abrev\": \"%s\"}", VERSION_MAJOR, VERSION_MINOR, frackstock.id, frackstock.beer, frackstock.color[0], frackstock.color[1], frackstock.color[2], frackstock.abrev);
+        sprintf((char *)buffer, "{\"v\": %d.%d, \"id\": %d, \"buddy\":%d, \"beer\": %d, \"color\": [%d, %d, %d], \"abrev\": \"%s\"}", VERSION_MAJOR, VERSION_MINOR, frackstock.id, frackstock.buddy, frackstock.beer, frackstock.color[0], frackstock.color[1], frackstock.color[2], frackstock.abrev);
         printf("%s\n", buffer);
     } else if (strncmp((char *)buffer, "set abrev ", 10) == 0) {
         for(int i = 0; i < LEN_ABREV; i++) {
@@ -89,6 +90,9 @@ void SERIAL_handle(){
     } else if(strcmp((char *)buffer, "reset beer ") == 0) {
         frackstock.beer = 0;
         printf("New beer amount set\n");
+    } else if(strncmp((char *)buffer, "set buddy ", 10) == 0) {
+        frackstock.buddy = atoi((char *)buffer+10);
+        printf("New buddy ID set\n");
     } else if(strncmp((char *)buffer, "set color ", 10) == 0) {
         // Parse the color by reading (r,g,b)
         int r = 0;

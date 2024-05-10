@@ -23,6 +23,8 @@
 #include "radio.h"
 #include "imu.h"
 #include "serial.h"
+#include "interrupts.h"
+#include "gpio.h"
 
 
 int main() {
@@ -49,8 +51,7 @@ int main() {
     }
 
     // Initialize the GPIO pin
-    gpio_init(BUILTIN_LED_PIN);
-    gpio_set_dir(BUILTIN_LED_PIN, GPIO_OUT);
+    GPIO_init();
 
     // Initialize fractstock data
     FRACK_init();
@@ -79,11 +80,14 @@ int main() {
         
         // Send some data
         if(cnt % 2000 == 1000){
-            RADIO_send();
-            LED_Ring_set_color(frackstock.color[0], frackstock.color[1], frackstock.color[2]);
-            LED_Ring_set_mode(LED_MODE_FILL_CIRCLE);
-            SEG_set_mode(SEG_MODE_CUSTOM);
-            SEG_write_number_hex(0xAA);
+            RADIO_send(BROADCAST_ADDRESS);
+            if(!GPIO_Button_getStates()){
+                LED_Ring_set_color(frackstock.color[0], frackstock.color[1], frackstock.color[2]);
+                LED_Ring_set_mode(LED_MODE_FILL_CIRCLE);
+                SEG_set_mode(SEG_MODE_CUSTOM);
+                SEG_set_segments(LEFT_DIGIT,  SEG_CHAR_t);
+                SEG_set_segments(RIGHT_DIGIT, SEG_CHAR_r);
+            }
         }
 
         #ifdef MAX_POWER_TEST
@@ -96,22 +100,22 @@ int main() {
         #endif
 
         // Tasks
-        if(cnt % 4 == 0)
+        if(cnt % 1000 == 500 || packetWaiting)
         {
             RADIO_Tick();
+        }
+
+        if(cnt % 2000 == 0 || IMU_INT1_flag || IMU_INT2_flag) 
+        {
+            IMU_Tick();
         }
 
         if(cnt % 4 == 2)
         {
             LED_Ring_Tick();
         }
-
-        if(cnt % 10 == 0)
-        {
-            IMU_Tick();
-        }
         
-        if(cnt % 4 == 0)
+        if(cnt % 4 == 3)
         {
            SEG_Tick();
         }
@@ -119,9 +123,17 @@ int main() {
 
         if (cnt % 100 == 0)     // Heartbeat
         {
-            DEV_LED_toggle();
+            GPIO_LED_set(1);
+        }
+        else if (cnt % 100 == 10)
+        {
+            GPIO_LED_set(0);
         }
         
+        if (cnt % 30 == 0){
+            GPIO_Button_Tick();
+        }
+
 
         SERIAL_Tick();
         

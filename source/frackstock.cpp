@@ -12,6 +12,7 @@
 tFrackStock frackstock = {
     .id = 0xfe,
     .beer = 0,
+    .buddy = 0,
     .color = {0, 255, 0},
     .abrev = "FRK_ET21"
 };

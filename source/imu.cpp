@@ -19,7 +19,7 @@
 #include "serial.h"
 #include "frackstock.h"
 #include "radio.h"
-
+#include "interrupts.h"
 
 // Function prototypes
 void BMI323_Select();
@@ -35,28 +35,6 @@ void IMU_INT2_handle();
 bool IMU_INT1_flag = false;
 bool IMU_INT2_flag = false;
 
-
-// Interrupt functions
-/**
- * @brief Interrupt service routine for IMU_INT.
- *
- * This function is called when an interrupt event occurs on the IMU_INT GPIO pin.
- * It sets the corresponding flag based on the GPIO pin that triggered the interrupt.
- *
- * @param gpio The GPIO pin number that triggered the interrupt.
- * @param events The events that triggered the interrupt.
- */
-void IMU_INT_irq(uint gpio, uint32_t events) {
-    SERIAL_printf("IMU INT IRQ\n");
-    if(gpio == IMU_INT1){
-        IMU_INT1_flag = true;
-        SERIAL_printf("->IMU INT1\n");
-    } else if(gpio == IMU_INT2){
-        IMU_INT2_flag = true;
-        SERIAL_printf("->IMU INT2\n");
-    }
-
-}
 
 
 /**
@@ -79,19 +57,22 @@ void IMU_INT1_handle(){
 
         if(data & SINGLE_TAP_DETECT){
             SERIAL_printf("Single tap detected\n");
-            LED_Ring_set_mode(LED_MODE_RAINBOW);
-            RADIO_send();
-        } else if(data & DOUBLE_TAP_DETECT){
-            SERIAL_printf("Double tap detected\n");
             LED_Ring_set_mode(LED_MODE_FADE);
             SEG_add_to_buffer(FRACK_get_beer(), SEG_NUMBER_MODE_DEC);
             SEG_set_mode(SEG_MODE_BUFFER);
+        } else if(data & DOUBLE_TAP_DETECT){
+            SERIAL_printf("Double tap detected\n");
+            LED_Ring_set_mode(LED_MODE_FILL_CIRCLE);
+            SEG_set_mode(SEG_MODE_CUSTOM);
+            SEG_set_segments(LEFT_DIGIT, SEG_CHAR_t);
+            SEG_set_segments(RIGHT_DIGIT, SEG_CHAR_r);
+            RADIO_send(BROADCAST_ADDRESS);
         } else if(data & TRIPPLE_TAP_DETECT){
             SERIAL_printf("Tripple tap detected\n");
-            LED_Ring_set_mode(LED_MODE_ON);
-            FRACK_inc_beer();
-            SEG_add_to_buffer(FRACK_get_beer(), SEG_NUMBER_MODE_DEC);
+            LED_Ring_set_mode(LED_MODE_RGB_WALK);
+            SEG_add_to_buffer(frackstock.buddy, SEG_NUMBER_MODE_HEX);
             SEG_set_mode(SEG_MODE_BUFFER);
+            RADIO_send(frackstock.buddy);
         } else {
             SERIAL_printf("Unknown detected: 0x%04X\n", data);
         }
@@ -224,6 +205,7 @@ void IMU_init(){
     acc_conf |= (0b010 << 8);   // Averageing 4 samples
     acc_conf |= (0b0 << 7);     // Cut-off acc_odr/2 
     acc_conf |= ACC_RANGE_2G;
+    //acc_conf |= ACC_RANGE_16G;
     acc_conf |= ACC_ODR_200;
     BMI_set_reg(BMI323_ACC_CONF, &acc_conf, 1);
     BMI_get_reg(BMI323_ACC_X, data_in, 3);
@@ -262,7 +244,7 @@ void IMU_init(){
 
     fAddr = (uint16_t)FEATURE_TAP_2;
     config = 0;
-    config |= 0b0001111111;         // Tap threshold
+    config |= 200;         // Tap threshold
     config |= (0b010000 << 10);     // Tap duration
     BMI_set_reg(BMI323_FEATURE_DATA_ADDR, &fAddr, 1);
     BMI_set_reg(BMI323_FEATURE_DATA_TX, &config, 1);
@@ -307,8 +289,8 @@ void IMU_init(){
     SERIAL_printf("IO_INT_CTRL: 0x%04X\n", config);
 
     // Set up the interrupt
-    gpio_set_irq_enabled_with_callback(IMU_INT1, GPIO_IRQ_EDGE_FALL, true, &IMU_INT_irq);
-    gpio_set_irq_enabled_with_callback(IMU_INT2, GPIO_IRQ_EDGE_FALL, true, &IMU_INT_irq);
+    gpio_set_irq_enabled_with_callback(IMU_INT1, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts);
+    gpio_set_irq_enabled_with_callback(IMU_INT2, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts);
 }
 
 
@@ -338,31 +320,6 @@ void IMU_Tick(){
     BMI_get_reg(BMI323_FEATURE_IO1, &data, 1);
     if(data & 0x0f == 0){
         SERIAL_printf("Feature engine not ready\n");
-    }
-
-    BMI_get_reg(BMI323_INT_STATUS_INT1, &data, 1);
-    
-    // Check for tap detection
-    if(data & (0x1 << 8)){
-        BMI_get_reg(BMI323_FEATURE_EVENT_EXT, &data, 1);
-        if(data & SINGLE_TAP_DETECT){
-            SERIAL_printf("TICK: Single tap detected\n");
-            LED_Ring_set_mode(LED_MODE_RAINBOW);
-            RADIO_send();
-        } else if(data & DOUBLE_TAP_DETECT){
-            SERIAL_printf("TICK: Double tap detected\n");
-            LED_Ring_set_mode(LED_MODE_FADE);
-            SEG_add_to_buffer(FRACK_get_beer(), SEG_NUMBER_MODE_DEC);
-            SEG_set_mode(SEG_MODE_BUFFER);
-        } else if(data & TRIPPLE_TAP_DETECT){
-            SERIAL_printf("TICK: Tripple tap detected\n");
-            LED_Ring_set_mode(LED_MODE_ON);
-            FRACK_inc_beer();
-            SEG_add_to_buffer(FRACK_get_beer(), SEG_NUMBER_MODE_DEC);
-            SEG_set_mode(SEG_MODE_BUFFER);
-        } else {
-            SERIAL_printf("TICK: Unknown detected: 0x%04X\n", data);
-        }
     }
 
 }

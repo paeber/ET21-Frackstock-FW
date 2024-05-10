@@ -29,10 +29,12 @@ add_executable(Frackstock
     source/cc1101.cpp
     source/imu.cpp
     source/serial.cpp
+    source/interrupts.cpp
+    source/gpio.cpp
 )
 
 pico_set_program_name(Frackstock "Frackstock")
-pico_set_program_version(Frackstock "0.9")
+pico_set_program_version(Frackstock "0.11")
 
 # Add pico_stdlib library which aggregates commonly used features
 target_link_libraries(

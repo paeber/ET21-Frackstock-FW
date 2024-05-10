@@ -7,11 +7,13 @@
 - [x] 868 MHz Tx and Rx
 - [x] IMU Tap detection
 - [x] Persistent flash storage for custom settings
+- [x] IMU Interrupts
+- [x] Touch Button 
 
 ### To do
 
-- [ ] IMU Interrupts
 - [ ] IMU any_motion and no_motion detection
+- [ ] Sleep mode for power improvements
 
 ## Flash instruction
 1. Press <kbd>BOOTSEL</kbd> button on Pico board
@@ -20,7 +22,7 @@
 4. Copy `*.uf2` file to the Pico mounted as a drive. The script will run on complete
 
 ## Development
-At the moment, setup in windows is the easiest. Mac OS and Linux need more manual steps to setup
+At the moment, setup in windows is the easiest. Mac OS and Linux need more manual steps to setup. [Pico C SDK](https://www.raspberrypi.com/documentation/pico-sdk/) is used within VS-Code.
 
 ### Windows Setup
 Follow the guide and installer

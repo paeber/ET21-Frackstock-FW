@@ -2,6 +2,7 @@
 <html>
     <head>
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
         <script>
             if (!('serial' in navigator)) {
                 alert('Web Serial API not supported.');
@@ -24,9 +25,10 @@
         </style>
 
         <div class="container">
-            <div class="row mb-3">
+            <div class="row mt-3 mb-3">
                 <div class="col">
                     <h1>Frackstock Configurator</h1>
+                    <p>Press "Apply" button to make settings persistent over power-cycles</p>
                 </div>
             </div>
         </div>
@@ -47,33 +49,91 @@
                         <button id="getStatus" class="btn btn-primary" disabled>Refresh</button>
                     </div>
                     <div id="deviceInfo">
-                        <table style="width: 80%">
+                        <table class="table table-striped table-hover" style="width: 80%">
                             <th>Version</th><th>ID</th><th>Beer</th><th>Color</th><th>Abreviation</th>
                             <tr><td>-</td><td>-</td><td>-</td><td>-</td><td>-</td></tr>
                         </table>
                     </div>
+                    <div id="db_deviceInfo">
+                    </div>
                 </div>
             </div>
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title">Color</h5>
-                        <button id="setColor" class="btn btn-primary ml-2" disabled>Set</button>
+
+            <div class="row">
+                <div class="col-sm-12 col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title">Color</h5>
+                            </div>
+                            <p>Define your color for the LED-Ring. This color is transmitted to the other devices.</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p>
+                                    Red:<input type="number" id="red" min="0" max="255" value="0" class="ml-2">
+                                    Green:<input type="number" id="green" min="0" max="255" value="255" class="ml-2">
+                                    Blue:<input type="number" id="blue" min="0" max="255" value="0" class="ml-2">
+                                </p>
+                                <button id="setColor" class="btn btn-primary ml-2" disabled>Set</button>
+                            </div>
+                        </div>
                     </div>
-                    
-                    Red:<input type="number" id="red" min="0" max="255" value="0" class="ml-2">
-                    Green:<input type="number" id="green" min="0" max="255" value="255" class="ml-2">
-                    Blue:<input type="number" id="blue" min="0" max="255" value="0" class="ml-2">
                 </div>
-            </div>
-            <div class="card mb-3">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title">Abreviation</h5>
-                        <button id="setAbrev" class="btn btn-primary ml-2" disabled>Set</button>
+                <div class="col-sm-12 col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title">Abreviation</h5>
+                            </div>
+                            <p>Define your abreviation. It is not used at the moment but may allow additional features later on</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p>
+                                    Max 8 characters <input type="text" id="abrev" class="ml-2">
+                                </p>
+                                <button id="setAbrev" class="btn btn-primary ml-2" disabled>Set</button>
+                            </div>
+                        </div>
                     </div>
-                    Max 8 characters
-                    <input type="text" id="abrev" class="ml-2">
+                </div>
+                <div class="col-sm-12 col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title">Beer Counter</h5>
+                            </div>
+                            <p>
+                                Use this to correct the beer counter if messed up. 
+                                Fakeing the beer counter is vorbidden and will be punished within the regulations of the Beard-Contract. 
+                                You agree to the terms by pressing the "Set" button.
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p>
+                                    New value: <input type="number" id="beer" min="0" max="99" value="0" class="ml-2">
+                                </p>
+                                <button id="setBeer" class="btn btn-primary ml-2" disabled>Set</button>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-12 col-md-6">
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="card-title">Frack-Buddy ID</h5>
+                            </div>
+                            <p>
+                                Configure the ID of the Frack-Buddy which can be directly addressed through radio. (0x01 - 0xFE, 0xFF is broadcast)
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <p>
+                                    ID (hex): <input type="text" id="buddyHex" pattern="[0-9a-fA-F]+" class="ml-2">
+                                    <!-- (decimal): <input type="number" id="buddy" min="1" max="254" value="255" class="ml-2"> -->
+                                </p>
+                                <button id="setBuddy" class="btn btn-primary ml-2" disabled>Set</button>
+                            </div>
+                            
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -98,6 +158,7 @@
         let reader;
         let encoder = new TextEncoder('utf-8');
         let lines = [];
+        let unique_id = 'Unknown'
 
         function appendMessage(text) {
             let messageBox = document.getElementById('message');
@@ -149,19 +210,61 @@
                 let statusObj = JSON.parse(status);
                 // Zeigen Sie die analysierten Daten in der deviceInfo div an
                 document.getElementById('deviceInfo').innerHTML = `
-                    <table style="width: 80%">
-                        <th>Version</th><th>ID</th><th>Beer</th><th>Color</th><th>Abreviation</th>
-                        <tr><td>${statusObj.v}</td><td>${statusObj.id.toString()}</td><td>${statusObj.beer}</td><td>${statusObj.color}</td><td>${statusObj.abrev}</td>
+                    <table class="table table-striped table-hover" style="width: 80%">
+                        <th>Version</th><th>ID</th><th>Buddy</th><th>Beer</th><th>Color</th><th>Abreviation</th>
+                        <tr><td>${statusObj.v}</td><td>${"0x" + statusObj.id.toString(16)}</td><td>${"0x" + statusObj.buddy.toString(16)}</td><td>${statusObj.beer}</td><td>${statusObj.color}</td><td>${statusObj.abrev}</td>
                     </table>
                 `;
             } catch (e) {
                 // The status message is not a valid JSON object
+            }
+            
+            // Check if the status message is a unique ID defined by pattern "%02X %02X %02X %02X %02X %02X %02X %02X"
+            let uniqueIdPattern = /^([0-9A-Fa-f]{2}\s){7}[0-9A-Fa-f]{2}/;
+            if (uniqueIdPattern.test(status)) {
+                // remove line breaks
+                status = status.replace(/(\r\n|\n|\r)/gm, "");
+                console.log('Unique ID:', status);
+                unique_id = status;
+                // Lookup the unique ID in the data.csv file
+                lookupData(unique_id, 'device_list.csv').then(data => {
+                    console.log(data);
+                    // Display the data in the deviceInfo div
+                    document.getElementById('db_deviceInfo').innerHTML = `
+                        <table class="table table-striped table-hover" style="width: 80%">
+                            <th>#</th><th>Unique ID</th><th>ID</th><th>Color</th><th>Abreviation</th>
+                            <tr><td>${data['Pos']}</td><td>${data['Unique ID']}</td><td>${data['ID']} (0x${Number(data['ID']).toString(16)})</td><td>${data['Color']}</td><td>${data['Abreviation']}</td>
+                        </table>
+                    `;
+                    
+                });
             }
         }
 
         async function startReading() {
             reader = port.readable.getReader();
             await readLoop();
+        }
+
+        async function lookupData(uniqueId, filename) {
+            const response = await fetch(filename);
+            const csvData = await response.text();
+            const results = Papa.parse(csvData, {header: true}).data;
+            // Find the index of the row with the unique ID
+            let index = results.findIndex(row => row['Unique ID'] === uniqueId);
+            if (index !== -1) {
+                return results[index];
+            } else {
+                return {};
+            }
+        }
+
+        async function listIds(filename) {
+            const response = await fetch(filename);
+            const csvData = await response.text();
+            const results = Papa.parse(csvData, {header: true}).data;
+            const ids = results.map(row => row['ID']);
+            return ids;
         }
 
         document.getElementById('connect').addEventListener('click', async () => {
@@ -174,6 +277,8 @@
             document.getElementById('reset').disabled = false;
             document.getElementById('getStatus').disabled = false;
             document.getElementById('send').disabled = false;
+            document.getElementById('setBeer').disabled = false;
+            document.getElementById('setBuddy').disabled = false;
 
             startReading();
         });
@@ -199,6 +304,8 @@
             document.getElementById('reset').disabled = true;
             document.getElementById('getStatus').disabled = true;
             document.getElementById('send').disabled = true;
+            document.getElementById('setBeer').disabled = true;
+            document.getElementById('setBuddy').disabled = true;
         });
 
         document.getElementById('apply').addEventListener('click', async () => {
@@ -212,6 +319,22 @@
         document.getElementById('send').addEventListener('click', async () => {
             let command = document.getElementById('command').value;
             sendMessage(command);
+        });
+
+        document.getElementById('setBeer').addEventListener('click', async () => {
+            let beer = document.getElementById('beer').value;
+            sendMessage(`set beer ${beer}`);
+        });
+
+        document.getElementById('setBuddy').addEventListener('click', async () => {
+            let buddy = document.getElementById('buddyHex').value;
+            // hex string to number
+            buddy = parseInt(buddy, 16);
+            if(buddy < 1 || buddy > 254) {
+                alert('Invalid buddy ID. Must be between 0x01 and 0xFE');
+                return;
+            }
+            sendMessage(`set buddy ${buddy}`);
         });
 
     </script>

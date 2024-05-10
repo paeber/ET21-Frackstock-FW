@@ -40,14 +40,6 @@ void print_buf(const uint8_t *buf, size_t len) {
 
 
 /**
- * Toggles the state of the built-in LED.
- */
-void DEV_LED_toggle(){
-    gpio_get(BUILTIN_LED_PIN) ? gpio_put(BUILTIN_LED_PIN, 0) : gpio_put(BUILTIN_LED_PIN, 1);
-}
-
-
-/**
  * @brief Resets the microcontroller.
  *
  * This function performs a reset of the microcontroller by writing a specific value to a memory address.
@@ -114,6 +106,7 @@ int DEV_init() {
             printf("First time flashing...\n");
             write_data[IDX_VERSION] = VERSION_MAJOR << 4 | VERSION_MINOR;
             write_data[IDX_FRACK_ID] = unique_id[7];
+            write_data[IDX_BUDDY_ID] = 0xff;
             write_data[IDX_BEER] = 0;
             write_data[IDX_FLASH_CNT] = 1;
             memcpy(write_data + IDX_ABREV, DEF_ABREV, LEN_ABREV);
@@ -121,6 +114,7 @@ int DEV_init() {
         } else {
             write_data[IDX_VERSION] = VERSION_MAJOR << 4 | VERSION_MINOR;
             write_data[IDX_FRACK_ID] = flash_target_contents[IDX_FRACK_ID];
+            write_data[IDX_BUDDY_ID] = flash_target_contents[IDX_BUDDY_ID];
             write_data[IDX_BEER] = flash_target_contents[IDX_BEER];
             write_data[IDX_FLASH_CNT] = flash_target_contents[IDX_FLASH_CNT] + 1;
             memcpy(write_data + IDX_ABREV, flash_target_contents + IDX_ABREV, LEN_ABREV);
@@ -167,6 +161,7 @@ int DEV_init() {
  */
 void DEV_get_frack_data(tFrackStock *frackstock) {
     frackstock->id = flash_target_contents[IDX_FRACK_ID];
+    frackstock->buddy = flash_target_contents[IDX_BUDDY_ID];
     frackstock->beer = flash_target_contents[IDX_BEER];
     memcpy(frackstock->abrev, flash_target_contents + IDX_ABREV, LEN_ABREV);
     memcpy(frackstock->color, flash_target_contents + IDX_COLOR, LEN_COLOR);
@@ -191,6 +186,7 @@ void DEV_set_frack_data(tFrackStock *frackstock){
     // Prepare data to write
     write_data[IDX_VERSION] = VERSION_MAJOR << 4 | VERSION_MINOR;  
     write_data[IDX_FRACK_ID] = frackstock->id; 
+    write_data[IDX_BUDDY_ID] = frackstock->buddy;
     write_data[IDX_BEER] = frackstock->beer;
     memcpy(write_data + IDX_ABREV, frackstock->abrev, LEN_ABREV);
     memcpy(write_data + IDX_COLOR, frackstock->color, LEN_COLOR);

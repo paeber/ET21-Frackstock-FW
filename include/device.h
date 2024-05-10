@@ -14,6 +14,7 @@
 #define IDX_VERSION             0
 #define IDX_FLASH_CNT           1
 #define IDX_FRACK_ID            2
+#define IDX_BUDDY_ID            3
 
 #define IDX_BEER                10
 #define IDX_ABREV               11
@@ -26,7 +27,6 @@ int DEV_init();
 void DEV_reset_mcu();
 void DEV_enter_bootloader();
 void DEV_get_unique_id(uint8_t *unique_id);
-void DEV_LED_toggle();
 void DEV_get_frack_data(tFrackStock *frackstock);
 void DEV_set_frack_data(tFrackStock *frackstock);
 
