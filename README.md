@@ -68,3 +68,21 @@ Press **Build All Projects** in cmake sidebar.
 Executable is located in `build/Frackstock.uf2`
 
 <img src="./assets/screenshot-build-all.png" alt="Build-All" style="zoom: 67%;" />
+
+### Debug
+
+ - CLion:
+ 
+  1. Download special build of OpenOCD that supports Picoprobe: https://github.com/shabaz123/rp2040tools
+	 This is a pre-built version for Windows x64. For different operating system you can build ist yourself: https://github.com/majbthrd/pico-debug/blob/master/howto/openocd.md
+  2. Place software at a convenient location. E.g. C:\OpenOCD\RastberryPi -> C:\OpenOCD\RastberryPi\openocd_rp2040\bin\openocd.exe
+  3. In CLion under Settings->Build, Executions, Deployment->Embedded Development set your OpenOCD Location
+  4. In the opened Frackstock project click on Run->Edit Configuration and add OpenOCD Download & Run
+  5. Select your executable, and select under Board config file board/rp2040_cmsis_dap_clion.cfg
+  6. Now debuging should be possible
+  7. Full tutorial: https://community.element14.com/products/raspberry-pi/b/blog/posts/using-clion-for-easier-coding-with-pi-pico-and-c-c
+  
+ - VS Code:
+ 
+  1. Full tutorial: https://techniccontroller.com/debugging-of-pico-in-vs-code-on-windows/
+  2. Should also work with the pre-built OpenOCD version. Follow steps 1 & 2 of CLion
