@@ -65,6 +65,10 @@ void handleMessage(){
         // Check if packet is for this device
         if(packet.data[PACKET_IDX_TARGET] != BROADCAST_ADDRESS && packet.data[PACKET_IDX_TARGET] != frackstock.id){
             SERIAL_printf("[RF] RX: packet not for self\n");
+            // Check if packet needs to be repeated
+            if(packet.data[PACKET_IDX_TTL] > 0) {
+                RADIO_repeat(packet.data, packet.length);
+            }
             gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts);
             return;
         }
@@ -166,7 +170,7 @@ void RADIO_send(uint8_t target) {
     if(target == BROADCAST_ADDRESS){
         packet.data[PACKET_IDX_LED_MODE] = LED_MODE_WALK;
     } else {
-        packet.data[PACKET_IDX_LED_MODE] = LED_MODE_RGB_WALK;
+        packet.data[PACKET_IDX_LED_MODE] = LED_MODE_BLINK;
     }
 
     radio.sendData(packet);
