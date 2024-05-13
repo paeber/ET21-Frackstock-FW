@@ -380,6 +380,15 @@ void IMU_Tick(){
         IMU_INT2_handle();
     }
 
+    // Check Communication
+    uint8_t com = BMI323_com_check();
+    if(com){
+        SERIAL_printf("IMU COM Issue");
+        while(1); // Watchdog reset
+    } else {
+        SERIAL_printf("IMU COM OK\n");
+    }
+
     /*
     switch(IMU_State){
         case IMU_STATE_UNKNOWN:

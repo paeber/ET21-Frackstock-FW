@@ -417,6 +417,20 @@ void SEG_set_mode(eSEG_MODE mode){
 }
 
 
+/**
+ * Checks if there are any pending LED or segment modes.
+ * 
+ * @return 1 if there are pending modes, 0 otherwise.
+ */
+int LED_Ring_isPending(){
+    if((activeLED_MODE != LED_MODE_OFF) || 
+       (activeSEG_MODE != SEG_MODE_OFF)){
+        return 1;
+    }
+    return 0;
+}
+
+
 void LED_Ring_Tick(){
 
     if(led_off_delay_cnt > 0){

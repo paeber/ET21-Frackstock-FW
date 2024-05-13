@@ -97,6 +97,7 @@ extern eSEG_MODE activeSEG_MODE;
 extern PicoLed::PicoLedController ledStrip;
 
 // Function prototypes
+int LED_Ring_isPending();
 int LED_Ring_init();
 void LED_Ring_Tick();
 void LED_Ring_set_color(uint8_t r, uint8_t g, uint8_t b);

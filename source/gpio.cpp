@@ -9,8 +9,10 @@
 
 #include "led_ring.h"
 #include "frackstock.h"
+#include "interrupts.h"
 
 // Global variables
+bool GPIO_INT_FLAG = false;
 uint16_t button_state = 0x00;
 uint8_t increment_allowed = 0;
 
@@ -28,6 +30,9 @@ void GPIO_init() {
     
     gpio_init(BUTTON_PIN);
     gpio_set_dir(BUTTON_PIN, GPIO_IN);
+
+    // Set the interrupt for the button
+    gpio_set_irq_enabled_with_callback(BUTTON_PIN, GPIO_IRQ_EDGE_RISE, true, &handle_Interrupts);
 }
 
 
@@ -77,8 +82,8 @@ void GPIO_Button_Tick(){
         {
             increment_allowed = 0;
             FRACK_inc_beer();
-            SEG_add_to_buffer(frackstock.beer, SEG_NUMBER_MODE_DEC);
-            SEG_set_mode(SEG_MODE_BUFFER);
+            SEG_set_mode(SEG_MODE_CUSTOM);
+            SEG_write_number(frackstock.beer);
         }
 
         if(button_state == 0x7FFF)
@@ -90,13 +95,17 @@ void GPIO_Button_Tick(){
         } else if (button_state == 0x00FF) {
             LED_Ring_set_color(255,0,0);
             LED_Ring_set_mode(LED_MODE_BLINK);
-            SEG_add_to_buffer(frackstock.beer, SEG_NUMBER_MODE_DEC);
-            SEG_set_mode(SEG_MODE_BUFFER);
+            SEG_set_mode(SEG_MODE_CUSTOM);
+            SEG_write_number(frackstock.beer);
         }
         
     }
 
     if(increment_allowed){
         increment_allowed--;
+    }
+
+    if(button_state == 0){
+        GPIO_INT_FLAG = false;
     }
 }

@@ -34,7 +34,7 @@ add_executable(Frackstock
 )
 
 pico_set_program_name(Frackstock "Frackstock")
-pico_set_program_version(Frackstock "0.11")
+pico_set_program_version(Frackstock "0.12")
 
 # Add pico_stdlib library which aggregates commonly used features
 target_link_libraries(

@@ -12,6 +12,7 @@ extern "C" {
 extern bool packetWaiting;
 extern bool IMU_INT1_flag;
 extern bool IMU_INT2_flag;
+extern bool GPIO_INT_FLAG;
 
 // Function prototypes
 void handle_Interrupts(uint gpio, uint32_t events);

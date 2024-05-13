@@ -5,7 +5,7 @@
 #include "hardware/gpio.h"
 #include "imu.h"
 #include "serial.h"
-
+#include "gpio.h"
 
 /**
  * @brief Handle interrupts from different GPIOs.
@@ -27,6 +27,9 @@ void handle_Interrupts(uint gpio, uint32_t events)
     } else if (gpio == RADIO_GDO1){
         packetWaiting = true;
         SERIAL_printf("->RADIO INT\n");
+    } else if (gpio == BUTTON_PIN){
+        GPIO_INT_FLAG = true;
+        SERIAL_printf("->BUTTON INT\n");
     }
     
 }

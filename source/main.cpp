@@ -26,12 +26,14 @@
 #include "interrupts.h"
 #include "gpio.h"
 
+#define RESET_SLEEP_TIMER 1000
 
 int main() {
     int ret;
     static absolute_time_t last_time;
     static absolute_time_t next_time;
     uint16_t cnt = 0;
+    static uint16_t sleep_timer = RESET_SLEEP_TIMER;
 
     // Enable UART over USB
     SERIAL_init();
@@ -68,16 +70,18 @@ int main() {
     }
 
     SERIAL_printf("Init done\n");
+    SERIAL_EnableMessages(SERIAL_MESSAGES_ENABLED);
 
-    SEG_add_to_buffer(VERSION_MAJOR << 4 | VERSION_MINOR, SEG_NUMBER_MODE_HEX_DOT);
+    //SEG_add_to_buffer(VERSION_MAJOR << 4 | VERSION_MINOR, SEG_NUMBER_MODE_HEX_DOT);
     SEG_add_to_buffer(frackstock.id, SEG_NUMBER_MODE_HEX);
     SEG_set_mode(SEG_MODE_BUFFER);
 
-    // Enable the watchdog, requiring the watchdog to be updated every 1000ms or the chip will reboot
-    watchdog_enable(1000, 1);
+    // Enable the watchdog, requiring the watchdog to be updated every 1200ms or the chip will reboot
+    watchdog_enable(1200, 1);
 
     while (1) {
         
+        /*
         // Send some data
         if(cnt % 2000 == 1000){
             RADIO_send(BROADCAST_ADDRESS);
@@ -89,6 +93,7 @@ int main() {
                 SEG_set_segments(RIGHT_DIGIT, SEG_CHAR_r);
             }
         }
+        */
 
         #ifdef MAX_POWER_TEST
         if (cnt % 4 == 0) 
@@ -99,49 +104,66 @@ int main() {
         }
         #endif
 
+        // Check for events
+        if(packetWaiting || IMU_INT1_flag || IMU_INT2_flag || GPIO_INT_FLAG || LED_Ring_isPending()){
+            sleep_timer = RESET_SLEEP_TIMER;
+        } else {
+            if(sleep_timer > 0){
+                sleep_timer--;
+            }
+        }
+
         // Tasks
-        if(cnt % 1000 == 500 || packetWaiting)
-        {
-            RADIO_Tick();
-        }
+        if(1){
+            if(cnt % 2000 == 100 || packetWaiting){
+                RADIO_Tick();
+            }
 
-        if(cnt % 2000 == 0 || IMU_INT1_flag || IMU_INT2_flag) 
-        {
-            IMU_Tick();
-        }
+            if(cnt % 2000 == 0 || IMU_INT1_flag || IMU_INT2_flag) {
+                IMU_Tick();
+            }
 
-        if(cnt % 4 == 2)
-        {
-            LED_Ring_Tick();
-        }
-        
-        if(cnt % 4 == 3)
-        {
-           SEG_Tick();
-        }
-        
+            if(LED_Ring_isPending()){
+                if(cnt % 4 == 2)
+                {
+                    LED_Ring_Tick();
+                }
+                
+                if(cnt % 4 == 3)
+                {
+                SEG_Tick();
+                }
+            }
+            
 
-        if (cnt % 100 == 0)     // Heartbeat
-        {
-            GPIO_LED_set(1);
-        }
-        else if (cnt % 100 == 10)
-        {
-            GPIO_LED_set(0);
-        }
-        
-        if (cnt % 30 == 0){
-            GPIO_Button_Tick();
-        }
+            if (cnt % 200 == 0)     // Heartbeat
+            {
+                GPIO_LED_set(1);
+            }
+            else if (cnt % 200 == 10)
+            {
+                GPIO_LED_set(0);
+            }
+            
+            if (cnt % 30 == 0){
+                GPIO_Button_Tick();
+            }
 
 
-        SERIAL_Tick();
-        
+            SERIAL_Tick();
 
-        cnt++;
-        last_time = delayed_by_ms(last_time, 10); // Sleep up to 10ms
-        sleep_until(last_time);
+            cnt++;
+            last_time = delayed_by_ms(last_time, 10); // Sleep up to 10ms
+            sleep_until(last_time);
+        } else {
+            // Sleep for 1 second
+            last_time = get_absolute_time();
+            next_time = delayed_by_ms(last_time, 10);
+            sleep_until(next_time);
+
+        }
         watchdog_update();
+
 
     }
 
