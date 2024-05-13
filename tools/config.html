@@ -28,7 +28,7 @@
             <div class="row mt-3 mb-3">
                 <div class="col">
                     <h1>Frackstock Configurator</h1>
-                    <p>Press "Apply" button to make settings persistent over power-cycles</p>
+                    <p>Press "Apply" button to make settings persistent over power-cycles.</p>
                 </div>
             </div>
         </div>
@@ -38,7 +38,8 @@
                 <div class="col">
                     <button id="connect" class="btn btn-primary">Verbinden</button>
                     <button id="apply" class="btn btn-primary" disabled>Apply</button>
-                    <button id="reset" class="btn btn-danger" disabled>Reset</button>
+                    <button id="reset" class="btn btn-danger" disabled>Reboot</button>
+                    <button id="bootloader" class="btn btn-danger" disabled>Flash Mode</button>
                 </div>
             </div>
 
@@ -304,6 +305,7 @@
             document.getElementById('setBuddy').disabled = false;
             document.getElementById('getUnique').disabled = false;
             document.getElementById('setId').disabled = false;
+            document.getElementById('bootloader').disabled = false;
 
             startReading();
 
@@ -335,6 +337,7 @@
             document.getElementById('setBuddy').disabled = true;
             document.getElementById('getUnique').disabled = true;
             document.getElementById('setId').disabled = true;
+            document.getElementById('bootloader').disabled = true;
         });
 
         document.getElementById('apply').addEventListener('click', async () => {
@@ -379,6 +382,10 @@
                 return;
             }
             sendMessage(`set id ${id}`);
+        });
+
+        document.getElementById('bootloader').addEventListener('click', async () => {
+            sendMessage('bootloader');
         });
 
     </script>
