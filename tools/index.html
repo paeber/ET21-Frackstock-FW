@@ -21,7 +21,6 @@
       <h1 class="mt-5">Frackstock</h1>
       <p class="lead">
         Übersicht zum Frackstock der ET21a und ET20t. Entwickelt von Eberkreis Engineering & Friends für Ingenieure.
-        Dermassen gut, dass es sogar die Katze interessiert. 
       </p>
 
       <div class="row mt-3">
@@ -61,7 +60,17 @@
                 <h5 class="card-title">Firmware</h5>
                 <p class="card-text">
                   Die Firmware basiert auf dem Pico C SDK. Über den Konfigurator können Einstellungen auf dem Frackstock angepasst werden. 
-                  Jeder Frackstock hat eine Definierte ID im Flash. Sollte die ID 0x00 oder 0xFF sein funktioniert das Ganze nicht. Bitte bei <b>Eberkreis</b> melden!</p>
+                  Jeder Frackstock hat eine Definierte ID im Flash. Sollte die ID 0x00 oder 0xFF sein funktioniert das Ganze nicht. Bitte bei <b>Eberkreis</b> melden!
+                </p>
+                <p class="card-text">
+                    <ol>
+                        <li>Verbinden über USB C mit dem PC</li>
+                        <li>Laden Sie die neueste Firmware von den GitHub Releases herunter</li>
+                        <li>Verbinden Sie sich mit dem Gerät im Konfigurator</li>
+                        <li>Drücken Sie "Flash Mode", um das Gerät am PC zu mounten</li>
+                        <li>Kopieren Sie Frackstock.uf2 auf das Gerät</li>
+                    </ol>
+                  </p>
                 <a href="https://github.com/paeber/ET21-Frackstock-FW/releases/latest/download/Frackstock.uf2" class="btn btn-primary">Download</a>
                 <a href="config.html" class="btn btn-primary">Konfigurator</a>
                 <a href="https://github.com/paeber/ET21-Frackstock-FW" class="btn btn-secondary">GitHub</a>
