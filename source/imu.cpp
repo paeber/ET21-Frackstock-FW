@@ -62,6 +62,7 @@ void IMU_INT1_handle(){
             SEG_set_mode(SEG_MODE_BUFFER);
         } else if(data & DOUBLE_TAP_DETECT){
             SERIAL_printf("Double tap detected\n");
+            LED_Ring_set_color(frackstock.color[0], frackstock.color[1], frackstock.color[2]);
             LED_Ring_set_mode(LED_MODE_FILL_CIRCLE);
             SEG_set_mode(SEG_MODE_CUSTOM);
             SEG_set_segments(LEFT_DIGIT, SEG_CHAR_t);
@@ -69,7 +70,8 @@ void IMU_INT1_handle(){
             RADIO_send(BROADCAST_ADDRESS);
         } else if(data & TRIPPLE_TAP_DETECT){
             SERIAL_printf("Tripple tap detected\n");
-            LED_Ring_set_mode(LED_MODE_RGB_WALK);
+            LED_Ring_set_color(frackstock.color[0], frackstock.color[1], frackstock.color[2]);
+            LED_Ring_set_mode(LED_MODE_BLINK);
             SEG_add_to_buffer(frackstock.buddy, SEG_NUMBER_MODE_HEX);
             SEG_set_mode(SEG_MODE_BUFFER);
             RADIO_send(frackstock.buddy);
