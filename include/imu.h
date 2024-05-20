@@ -73,6 +73,9 @@ extern "C" {
 #define FEATURE_TAP_2               0x1F
 #define FEATURE_TAP_3               0x20
 
+#define FEATURE_SIGMO_1             0x0D
+#define FEATURE_SIGMO_2             0x0E
+#define FEATURE_SIGMO_3             0x0F
 
 #define SINGLE_TAP_DETECT           (0x1 << 3)
 #define DOUBLE_TAP_DETECT           (0x1 << 4)

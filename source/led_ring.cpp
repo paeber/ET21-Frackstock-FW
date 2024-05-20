@@ -399,7 +399,11 @@ void LED_Ring_set_mode(eLED_MODE mode){
     ledStrip.fill( PicoLed::RGB(0, 0, 0) );
     activeLED_MODE = mode;
     led_off_delay_cnt = LED_DEFAULT_ON_TIME;
-    led_tick_cnt = 0;
+    if(mode == LED_MODE_RAINBOW_BLINK){
+        //led_off_delay_cnt = 3 * LED_DEFAULT_ON_TIME;
+    } else {
+        led_tick_cnt = 0;
+    }
 }
 
 
@@ -486,6 +490,18 @@ void LED_Ring_Tick(){
 
         case LED_MODE_FILL_CIRCLE:
             ledStrip.setPixelColor((led_tick_cnt / 3) % LED_RING_COUNT, ledColor);
+            break;
+
+        case LED_MODE_RAINBOW_BLINK:
+            if(led_tick_cnt % 6 == 0){
+                ledStrip.fill( PicoLed::RGB(255, 0, 0) );
+            } else if(led_tick_cnt % 6 == 2){
+                ledStrip.fill( PicoLed::RGB(0, 255, 0) );
+            } else if(led_tick_cnt % 6 == 4){
+                ledStrip.fill( PicoLed::RGB(0, 0, 255) );
+            } else {
+                //ledStrip.fill( PicoLed::RGB(0, 0, 0) );
+            }
             break;
     }
 

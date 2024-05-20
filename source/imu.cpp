@@ -96,9 +96,11 @@ void IMU_INT2_handle(){
     SERIAL_printf("IMU INT2: 0x%04X\n", interrupt);
 
     // Check for tap detection
-    if(interrupt & (0x1 << 8)){
+    if(interrupt & (0x1 << 6)){
+        SERIAL_printf("Significant Motion detected\n");
+        LED_Ring_set_mode(LED_MODE_RAINBOW_BLINK);
+    } else if(interrupt & (0x1 << 8)){
         SERIAL_printf("Tap detected\n");
-
     }
 }
 
@@ -288,7 +290,6 @@ uint16_t IMU_Configure_Features(){
 
     // Configure Tab detection
     uint16_t fAddr = (uint16_t)FEATURE_TAP_1;
-    //config = 0x0074;    // Set x axis
     config = 0x00B4;    // Set x axis & robust mode
     BMI_set_reg(BMI323_FEATURE_DATA_ADDR, &fAddr, 1);
     BMI_set_reg(BMI323_FEATURE_DATA_TX, &config, 1);
@@ -303,15 +304,37 @@ uint16_t IMU_Configure_Features(){
     BMI_set_reg(BMI323_FEATURE_DATA_TX, &config, 1);
 
     sleep_ms(10);
+    // End of tap detection configuration
+
+    // Configure significant motion detection
+    fAddr = (uint16_t)FEATURE_SIGMO_1;
+    config = 0;
+    config |= (uint16_t)(20);        // 0.4s
+    BMI_set_reg(BMI323_FEATURE_DATA_ADDR, &fAddr, 1);
+    BMI_set_reg(BMI323_FEATURE_DATA_TX, &config, 1);
+
+    sleep_ms(10);
+
+    fAddr = (uint16_t)FEATURE_SIGMO_2;
+    config = 0;
+    config |= 500;        // peak_2_peak_min(max 512)
+    config |= 50 << 10;   // Minimum number of mean crossing per second
+    BMI_set_reg(BMI323_FEATURE_DATA_ADDR, &fAddr, 1);
+    BMI_set_reg(BMI323_FEATURE_DATA_TX, &config, 1);
+
+    sleep_ms(10);
+    // End of significant motion detection configuration
+
 
     BMI_get_reg(BMI323_FEATURE_IO0, &config, 1);
     config |= SINGLE_TAP_EN;    // Enable single tap detection
     config |= DOUBLE_TAP_EN;    // Enable double tap detection
     config |= TRIPPLE_TAP_EN;   // Enable tripple tap detection
+    config |= 0x01 << 10;       // Enable signifcant motion detection
     BMI_set_reg(BMI323_FEATURE_IO0, &config, 1);
 
     config = 0x0001;
-    BMI_set_reg(BMI323_FEATURE_IO_STATUS, &config, 1);  // Apply interrupt settings
+    BMI_set_reg(BMI323_FEATURE_IO_STATUS, &config, 1);  // Apply settings
 
     sleep_ms(10);
     BMI_get_reg(BMI323_FEATURE_IO0, &config, 1);
@@ -334,8 +357,12 @@ uint16_t IMU_Configure_IT(){
     uint16_t config = 0x0000;
 
     BMI_get_reg(BMI323_INT_MAP2, &config, 1);
-    config = (config & (uint16_t)(~0b11)) | (0b01 << 0); // Map tap detection to INT2
+    config = (config & (uint16_t)(~0b11)) | (0b01 << 0); // Map tap detection to INT1
     BMI_set_reg(BMI323_INT_MAP2, &config, 1);
+
+    BMI_get_reg(BMI323_INT_MAP1, &config, 1);
+    config = (config & (uint16_t)(~(0b11 << 12))) | (0b10 << 12); // Map Sig Motion detection to INT2
+    BMI_set_reg(BMI323_INT_MAP1, &config, 1);
 
     BMI_get_reg(BMI323_INT_MAP2, &config, 1);
     SERIAL_printf("INT_MAP2: 0x%04X\n", config);
