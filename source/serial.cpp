@@ -76,6 +76,7 @@ void SERIAL_handle(){
         printf("set buddy - Set the buddy ID\n");
         printf("reset beer - Reset the amount of beer\n");
         printf("set color - Set the (r,g,b) of the LED Ring\n");
+        printf("set led_restore_mode - Set the LED restore mode\n");
         printf("send to - Send a message to a specific ID\n");
         printf("apply - Apply the changes\n");
         printf("bootloader - Enter the bootloader (disabled)\n");
@@ -136,6 +137,10 @@ void SERIAL_handle(){
         RADIO_send(id);
         LED_Ring_set_color(frackstock.color[0], frackstock.color[1], frackstock.color[2]);
         LED_Ring_set_mode(LED_MODE_FILL_CIRCLE);
+    } else if (strncmp((char *)buffer, "set led_restore_mode ", 21) == 0) {
+        uint8_t mode = atoi((char *)buffer+21);
+        frackstock.led_mode = mode;
+        printf("New LED restore mode set\n");
     } else {
         printf("Unknown command\n");
     }

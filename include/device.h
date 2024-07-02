@@ -21,6 +21,7 @@
 #define LEN_ABREV               8
 #define IDX_COLOR               19
 #define LEN_COLOR               3
+#define IDX_LED_MODE            22
 
 // Function prototypes
 int DEV_init();

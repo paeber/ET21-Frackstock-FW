@@ -14,7 +14,8 @@ tFrackStock frackstock = {
     .beer = 0,
     .buddy = 0,
     .color = {0, 255, 0},
-    .abrev = "FRK_ET21"
+    .abrev = "FRK_ET21",
+    .led_mode = (uint8_t)LED_MODE_WALK
 };
 
 
@@ -34,5 +35,16 @@ uint8_t FRACK_get_beer() {
     return frackstock.beer;
 }
 
+uint8_t FRACK_get_id() {
+    return frackstock.id;
+}
 
+uint8_t FRACK_get_buddy() {
+    return frackstock.buddy;
+}
 
+uint8_t FRACK_get_led_mode() {
+    return frackstock.led_mode;
+}
+
+// EOF

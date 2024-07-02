@@ -103,6 +103,8 @@ void LED_Ring_Tick();
 void LED_Ring_set_color(uint8_t r, uint8_t g, uint8_t b);
 void LED_Ring_set_mode(eLED_MODE mode);
 void SEG_set_mode(eSEG_MODE mode);
+void LED_Ring_set_mode_restore(eLED_MODE mode);
+uint8_t LED_Ring_get_mode_restore();
 int SEG_add_to_buffer(uint8_t number, eSEG_NUMBER_MODE mode);
 int SEG_pop_from_buffer();
 void SEG_clear_buffer();

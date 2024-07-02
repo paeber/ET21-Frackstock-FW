@@ -10,6 +10,7 @@
 #include "led_ring.h"
 #include "frackstock.h"
 #include "interrupts.h"
+#include "serial.h"
 
 // Global variables
 bool GPIO_INT_FLAG = false;
@@ -72,6 +73,8 @@ uint16_t GPIO_Button_getStates(){
  * This function is responsible for handling the button tick event. It updates the button state, checks if the button is pressed, and performs specific actions based on the button state.
  */
 void GPIO_Button_Tick(){
+    static uint8_t bit_changes_num = 0;
+    static uint8_t bit_changes_en = 1;
 
     button_state = button_state << 1;
     if(gpio_get(BUTTON_PIN))
@@ -97,7 +100,7 @@ void GPIO_Button_Tick(){
             LED_Ring_set_mode(LED_MODE_BLINK);
             SEG_set_mode(SEG_MODE_CUSTOM);
             SEG_write_number(frackstock.beer);
-        }
+        }  
         
     }
 
@@ -107,5 +110,30 @@ void GPIO_Button_Tick(){
 
     if(button_state == 0){
         GPIO_INT_FLAG = false;
+    }
+
+    if((button_state & 0x8000) && bit_changes_en){
+        // check number of bit changes in the last 16 states
+        uint16_t temp = button_state;
+        bit_changes_en = 0; // reset bit changes enable
+
+        for(int i = 0; i < 15; i++){
+            if((temp & 0x01) != ((temp >> 1) & 0x01)){
+                bit_changes_num++;
+            }
+            temp = temp >> 1;
+        }
+        SERIAL_printf("Bit changes: %d\n", bit_changes_num);
+        if(bit_changes_num >= 3){
+            if(LED_Ring_get_mode_restore() == (uint8_t)LED_MODE_OFF){
+                LED_Ring_set_mode_restore((eLED_MODE)FRACK_get_led_mode());
+            } else {
+                LED_Ring_set_mode_restore(LED_MODE_OFF);
+            }
+        }
+
+    } else if (button_state == 0) {
+        bit_changes_num = 0;
+        bit_changes_en = 1;
     }
 }
