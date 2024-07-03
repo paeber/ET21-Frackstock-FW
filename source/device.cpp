@@ -111,6 +111,7 @@ int DEV_init() {
             write_data[IDX_FLASH_CNT] = 1;
             memcpy(write_data + IDX_ABREV, DEF_ABREV, LEN_ABREV);
             memcpy(write_data + IDX_COLOR, "\x00\xff\x00", LEN_COLOR);
+            write_data[IDX_LED_MODE] = 5;
         } else {
             write_data[IDX_VERSION] = VERSION_MAJOR << 4 | VERSION_MINOR;
             write_data[IDX_FRACK_ID] = flash_target_contents[IDX_FRACK_ID];
@@ -119,6 +120,11 @@ int DEV_init() {
             write_data[IDX_FLASH_CNT] = flash_target_contents[IDX_FLASH_CNT] + 1;
             memcpy(write_data + IDX_ABREV, flash_target_contents + IDX_ABREV, LEN_ABREV);
             memcpy(write_data + IDX_COLOR, flash_target_contents + IDX_COLOR, LEN_COLOR);
+            if(flash_target_contents[IDX_LED_MODE]){    // Check if Custom value is set
+                write_data[IDX_LED_MODE] = flash_target_contents[IDX_LED_MODE];
+            } else {
+                write_data[IDX_LED_MODE] = 5;
+            }
         }
 
         printf("New data:\n");
@@ -165,6 +171,7 @@ void DEV_get_frack_data(tFrackStock *frackstock) {
     frackstock->beer = flash_target_contents[IDX_BEER];
     memcpy(frackstock->abrev, flash_target_contents + IDX_ABREV, LEN_ABREV);
     memcpy(frackstock->color, flash_target_contents + IDX_COLOR, LEN_COLOR);
+    frackstock->led_mode = flash_target_contents[IDX_LED_MODE];
 }
 
 
@@ -190,6 +197,7 @@ void DEV_set_frack_data(tFrackStock *frackstock){
     write_data[IDX_BEER] = frackstock->beer;
     memcpy(write_data + IDX_ABREV, frackstock->abrev, LEN_ABREV);
     memcpy(write_data + IDX_COLOR, frackstock->color, LEN_COLOR);
+    write_data[IDX_LED_MODE] = frackstock->led_mode;
 
     uint32_t interrupts = save_and_disable_interrupts();
 

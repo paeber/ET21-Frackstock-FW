@@ -171,6 +171,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <input type="text" id="command" class="form-control" placeholder="help">
                         <button id="send" class="btn btn-primary" disabled>Send</button>
+                        <button id="clear" class="btn btn-danger">Clear</button>
                     </div>
                     
                 </div>
@@ -387,6 +388,10 @@
 
         document.getElementById('bootloader').addEventListener('click', async () => {
             sendMessage('bootloader');
+        });
+
+        document.getElementById('clear').addEventListener('click', async () => {
+            document.getElementById('message').innerHTML = '';
         });
 
     </script>

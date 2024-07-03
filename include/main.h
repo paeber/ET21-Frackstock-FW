@@ -9,7 +9,7 @@
 #include "pico/stdlib.h"
 
 #define VERSION_MAJOR 0
-#define VERSION_MINOR 13
+#define VERSION_MINOR 15
 
 //#define MAX_POWER_TEST
 

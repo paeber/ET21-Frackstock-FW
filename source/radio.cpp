@@ -55,9 +55,11 @@ void handleMessage(){
         sprintf((char *)serBuffer, "packet: len %d", packet.length);
         SERIAL_printf("[RF] RX: %s\n", serBuffer);
 
+        sprintf((char *)serBuffer, "{from: %d, to: %d, ttl: %d, r1: %d, r2: %d, beer: %d, color: %d %d %d, led: %d}", packet.data[PACKET_IDX_OWNER], packet.data[PACKET_IDX_TARGET], packet.data[PACKET_IDX_TTL], packet.data[PACKET_IDX_REPEATER_1], packet.data[PACKET_IDX_REPEATER_2], packet.data[PACKET_IDX_BEER], packet.data[PACKET_IDX_COLOR_R], packet.data[PACKET_IDX_COLOR_G], packet.data[PACKET_IDX_COLOR_B], packet.data[PACKET_IDX_LED_MODE]);
+        SERIAL_printf("[RF] RX: %s\n", serBuffer);
+
         // Check if packet is from this device
         if(packet.data[PACKET_IDX_OWNER] == frackstock.id || packet.data[PACKET_IDX_REPEATER_1] == frackstock.id || packet.data[PACKET_IDX_REPEATER_2] == frackstock.id){
-            SERIAL_printf("[RF] RX: packet from self\n");
             gpio_set_irq_enabled_with_callback(RADIO_GDO1, GPIO_IRQ_EDGE_FALL, true, &handle_Interrupts);
             return;
         }

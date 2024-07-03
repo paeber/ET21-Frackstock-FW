@@ -54,6 +54,7 @@
 
 eSEG_MODE activeSEG_MODE = SEG_MODE_OFF;
 eLED_MODE activeLED_MODE = LED_MODE_OFF;
+eLED_MODE restoreLED_MODE = LED_MODE_OFF;
 PicoLed::Color ledColor = PicoLed::RGB(209, 134, 0);
 PicoLed::PicoLedController ledStrip = PicoLed::addLeds<PicoLed::WS2812B>(pio0, 0, LED_RING_PIN, LED_RING_COUNT, PicoLed::FORMAT_GRB);
 
@@ -396,10 +397,41 @@ void LED_Ring_set_color(uint8_t r, uint8_t g, uint8_t b){
  * @param mode The mode to set for the LED ring.
  */
 void LED_Ring_set_mode(eLED_MODE mode){
-    ledStrip.fill( PicoLed::RGB(0, 0, 0) );
     activeLED_MODE = mode;
     led_off_delay_cnt = LED_DEFAULT_ON_TIME;
-    led_tick_cnt = 0;
+    if(mode == LED_MODE_FADE){
+        led_tick_cnt %= 255;
+    } else {
+        ledStrip.fill( PicoLed::RGB(0, 0, 0) );
+        led_tick_cnt = 0;
+    }
+}
+
+
+/**
+ * @brief Sets the restore mode for the LED ring and calls the LED_Ring_set_mode function.
+ * 
+ * This function sets the restore mode for the LED ring and then calls the LED_Ring_set_mode function
+ * to set the LED ring to the specified mode.
+ * 
+ * @param mode The mode to set for the LED ring.
+ */
+void LED_Ring_set_mode_restore(eLED_MODE mode){
+    restoreLED_MODE = mode;
+    if (mode == LED_MODE_OFF){
+        mode = LED_MODE_TURN_OFF;
+    }
+    LED_Ring_set_mode(mode);
+}
+
+
+/**
+ * Retrieves the mode value for restoring the LED ring.
+ *
+ * @return The mode value for restoring the LED ring.
+ */
+uint8_t LED_Ring_get_mode_restore(){
+    return (uint8_t)restoreLED_MODE;
 }
 
 
@@ -434,9 +466,11 @@ int LED_Ring_isPending(){
 void LED_Ring_Tick(){
 
     if(led_off_delay_cnt > 0){
-        led_off_delay_cnt--;
+        led_off_delay_cnt--;                        // Decrement off delay counter
+    } else if(restoreLED_MODE != LED_MODE_OFF){
+        LED_Ring_set_mode(restoreLED_MODE);         // Turn on default mode
     } else {
-        activeLED_MODE = LED_MODE_TURN_OFF;
+        activeLED_MODE = LED_MODE_TURN_OFF;         // Turn off LED Ring
     }
 
     switch(activeLED_MODE){

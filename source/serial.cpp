@@ -11,6 +11,8 @@
 #include "main.h"
 #include "frackstock.h"
 #include "device.h"
+#include "radio.h"
+#include "led_ring.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -74,6 +76,8 @@ void SERIAL_handle(){
         printf("set buddy - Set the buddy ID\n");
         printf("reset beer - Reset the amount of beer\n");
         printf("set color - Set the (r,g,b) of the LED Ring\n");
+        printf("set led_restore_mode - Set the LED restore mode\n");
+        printf("send to - Send a message to a specific ID\n");
         printf("apply - Apply the changes\n");
         printf("bootloader - Enter the bootloader (disabled)\n");
     } else if(strcmp((char *)buffer, "status") == 0) {
@@ -126,6 +130,17 @@ void SERIAL_handle(){
             SERIAL_EnableMessages(SERIAL_MESSAGES_ENABLED);
             printf("Serial messages enabled\n");
         }
+    } else if (strncmp((char *)buffer, "send to ", 8) == 0) {
+        // Send a message to a specific ID
+        uint8_t id = atoi((char *)buffer+8);
+        printf("Sending message to ID %d\n", id);
+        RADIO_send(id);
+        LED_Ring_set_color(frackstock.color[0], frackstock.color[1], frackstock.color[2]);
+        LED_Ring_set_mode(LED_MODE_FILL_CIRCLE);
+    } else if (strncmp((char *)buffer, "set led_restore_mode ", 21) == 0) {
+        uint8_t mode = atoi((char *)buffer+21);
+        frackstock.led_mode = mode;
+        printf("New LED restore mode set\n");
     } else {
         printf("Unknown command\n");
     }
